@@ -1,0 +1,41 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.37530.8
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "PizzaGo", "PizzaGo\", "{4DC889B9-FC96-425D-8AEC-D4A82F5F9E99}"
+	ProjectSection(WebsiteProperties) = preProject
+		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.6.1"
+		Debug.AspNetCompiler.VirtualPath = "/localhost_57962"
+		Debug.AspNetCompiler.PhysicalPath = "PizzaGo\"
+		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_57962\"
+		Debug.AspNetCompiler.Updateable = "true"
+		Debug.AspNetCompiler.ForceOverwrite = "true"
+		Debug.AspNetCompiler.FixedNames = "false"
+		Debug.AspNetCompiler.Debug = "True"
+		Release.AspNetCompiler.VirtualPath = "/localhost_57962"
+		Release.AspNetCompiler.PhysicalPath = "PizzaGo\"
+		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_57962\"
+		Release.AspNetCompiler.Updateable = "true"
+		Release.AspNetCompiler.ForceOverwrite = "true"
+		Release.AspNetCompiler.FixedNames = "false"
+		Release.AspNetCompiler.Debug = "False"
+		VWDPort = "57962"
+		DefaultWebSiteLanguage = "Visual C#"
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{4DC889B9-FC96-425D-8AEC-D4A82F5F9E99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4DC889B9-FC96-425D-8AEC-D4A82F5F9E99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {4D92981F-3FF5-4EF0-A382-07B5B50BD6C5}
+	EndGlobalSection
+EndGlobal
