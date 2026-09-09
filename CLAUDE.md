@@ -10,7 +10,7 @@ This is an **ASP.NET Web Forms "Website" project** (the pre-2010, non-SDK-style 
 - Code-behind files (`*.aspx.cs`, `*.master.cs`, `*.ascx.cs`) are compiled dynamically per-page; there is no central `Program.cs`/`Startup` entry point in the SDK sense.
 - Shared, non-page C# classes live in `PizzaGo/PizzaGo/App_Code/` and are compiled automatically by ASP.NET from that folder — this is where new helpers/services/models should generally go unless they belong to a specific page.
 - Dependencies are managed via `packages.config` (classic NuGet, not `PackageReference`) — see `PizzaGo/PizzaGo/packages.config`. Restored packages land in `PizzaGo/packages/`.
-- Targets .NET Framework 4.6.1.
+- Targets .NET Framework 4.7.2 (`Web.config` `targetFramework`, `packages.config` `net472`).
 
 ## Build / run / restore
 
@@ -50,8 +50,21 @@ There is no `dotnet build`/`dotnet test` workflow here (this predates the SDK-st
 - Bootstrap 3.3.7 + jQuery 3.3.1 + Modernizr, delivered via NuGet packages under `PizzaGo/packages/` and referenced/bundled through `BundleConfig.cs`.
 - `Microsoft.AspNet.ScriptManager.WebForms`/`MSAjax` provide the WebForms `ScriptManager`/partial-postback (UpdatePanel) infrastructure.
 
+## Project goals (Phase 1 — see README.md)
+
+This is explicitly a "legacy build" learning exercise, not a real pizza-ordering product. `README.md` defines the target scope:
+
+- A core domain of 3–4 related entities (e.g. a case/request-tracking style flow: Requests → Assignees → Status History) with basic CRUD for each.
+- One approval/status-transition workflow with at least 3 states (e.g. Submitted → In Review → Closed).
+- A simple login/role check (hardcoded roles are acceptable).
+- One list/search view with filtering and pagination.
+- **Layered architecture** — UI / business logic / data access clearly separated, with no logic in code-behind. This is a deliberate constraint for new domain work, even though the existing scaffolded Identity/Account pages (from the VS template) call `UserManager`/`ApplicationDbContext` directly from code-behind.
+- Server-side input validation.
+- Logging of workflow state changes (intended to become an audit trail in a later phase).
+
 ## Working in this codebase
 
 - When adding a new page, follow the existing `.aspx` + `.aspx.cs` + `MasterPageFile="~/Site.Master"` pattern (see `Default.aspx`/`Default.aspx.cs`).
 - When adding shared C# logic that isn't tied to a single page, put it in `App_Code/`.
+- New domain logic should follow the layered-architecture requirement above (keep business logic and data access out of code-behind), rather than mirroring the direct-`DbContext`-from-code-behind pattern used in the pre-existing Identity/Account pages.
 - `PizzaGo/PizzaGo/Bin/` and `PizzaGo/packages/` contain restored/copied binaries — treat them as generated output, not source to edit.
