@@ -18,10 +18,33 @@ x86/
 [Aa][Rr][Mm]/
 [Aa][Rr][Mm]64/
 bld/
-[Bb]in/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+
+# Visual Studio workspace/user state — machine-specific, must never be shared
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Classic Web Site Project (PizzaGo): NuGet-restored packages, regenerate via `nuget restore`
+PizzaGo/packages/
+
+# Bin/ holds NuGet-restored assemblies for the Web Site Project. Keep the
+# small .refresh pointer files (MSBuild/VS use them to re-copy the real DLL
+# from packages/ on any machine); ignore the actual binaries.
+PizzaGo/PizzaGo/Bin/**/*.dll
+PizzaGo/PizzaGo/Bin/**/*.pdb
+PizzaGo/PizzaGo/Bin/**/*.xml
+PizzaGo/PizzaGo/Bin/**/*.exe
+PizzaGo/PizzaGo/Bin/**/*.rsp
+PizzaGo/PizzaGo/Bin/**/*.targets
+PizzaGo/PizzaGo/Bin/**/*.config
+
+# Output of the ASP.NET Compiler (aspnet_compiler) precompiled-site build
+PizzaGo/PrecompiledWeb/
 
 # .NET Core
 project.lock.json

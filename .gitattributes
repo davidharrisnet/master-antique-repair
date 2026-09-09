@@ -1,0 +1,20 @@
+# Normalize line endings for text files regardless of each machine's local
+# core.autocrlf setting, so the repository always stores LF and diffs/merges
+# aren't driven by line-ending noise between machines.
+* text=auto
+
+# Known binary types — never touch line endings in these
+*.dll binary
+*.exe binary
+*.pdb binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
+*.eot binary
+*.mdf binary
+*.ldf binary
