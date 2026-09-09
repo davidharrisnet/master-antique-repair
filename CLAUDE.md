@@ -4,20 +4,20 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project type
 
-This is an **ASP.NET Web Forms "Website" project** (the pre-2010, non-SDK-style project type), not a Web Application project and not a modern SDK-style .NET project. Key implications:
+This is an **ASP.NET Web Forms "Website" project** (the pre-2010, non-SDK-style project type), not a Web Application project and not a modern SDK-style .NET project. Both the repo-root wrapper folder and the website project/namespace inside it are named `MasterAntiqueRepair` (originally scaffolded as "PizzaGo" — fully renamed, including the C# namespace, `.sln`/folder names, and the LocalDB catalog name). Key implications:
 
-- There is **no `.csproj`** — the project is defined entirely by `PizzaGo/PizzaGo.sln`, which references the `PizzaGo/PizzaGo/` folder directly via a `WebsiteProperties` section (VirtualPath `/localhost_57962`, port `57962`).
+- There is **no `.csproj`** — the project is defined entirely by `MasterAntiqueRepair/MasterAntiqueRepair.sln`, which references the `MasterAntiqueRepair/MasterAntiqueRepair/` folder directly via a `WebsiteProperties` section (VirtualPath `/localhost_57962`, port `57962`).
 - Code-behind files (`*.aspx.cs`, `*.master.cs`, `*.ascx.cs`) are compiled dynamically per-page; there is no central `Program.cs`/`Startup` entry point in the SDK sense.
-- Shared, non-page C# classes live in `PizzaGo/PizzaGo/App_Code/` and are compiled automatically by ASP.NET from that folder — this is where new helpers/services/models should generally go unless they belong to a specific page.
-- Dependencies are managed via `packages.config` (classic NuGet, not `PackageReference`) — see `PizzaGo/PizzaGo/packages.config`. Restored packages land in `PizzaGo/packages/`.
+- Shared, non-page C# classes live in `MasterAntiqueRepair/MasterAntiqueRepair/App_Code/` and are compiled automatically by ASP.NET from that folder — this is where new helpers/services/models should generally go unless they belong to a specific page.
+- Dependencies are managed via `packages.config` (classic NuGet, not `PackageReference`) — see `MasterAntiqueRepair/MasterAntiqueRepair/packages.config`. Restored packages land in `MasterAntiqueRepair/packages/`.
 - Targets .NET Framework 4.7.2 (`Web.config` `targetFramework`, `packages.config` `net472`).
 
 ## Build / run / restore
 
 There is no `dotnet build`/`dotnet test` workflow here (this predates the SDK-style tooling). Typical workflow:
 
-- **Open and run**: Open `PizzaGo/PizzaGo.sln` in Visual Studio and press F5/Ctrl+F5. This starts IIS Express against the `PizzaGo/PizzaGo/` folder on port `57962` and compiles pages on request.
-- **Restore packages**: `nuget restore PizzaGo/PizzaGo.sln` (classic `packages.config` restore) if `PizzaGo/packages/` is missing or out of sync with `packages.config`.
+- **Open and run**: Open `MasterAntiqueRepair/MasterAntiqueRepair.sln` in Visual Studio and press F5/Ctrl+F5. This starts IIS Express against the `MasterAntiqueRepair/MasterAntiqueRepair/` folder on port `57962` and compiles pages on request.
+- **Restore packages**: `nuget restore MasterAntiqueRepair/MasterAntiqueRepair.sln` (classic `packages.config` restore) if `MasterAntiqueRepair/packages/` is missing or out of sync with `packages.config`.
 - **No test project exists** in this repo currently.
 
 ## Architecture
@@ -27,7 +27,7 @@ There is no `dotnet build`/`dotnet test` workflow here (this predates the SDK-st
 - `Global.asax` — `Application_Start` calls `RouteConfig.RegisterRoutes(...)` and `BundleConfig.RegisterBundles(...)`.
 - `App_Code/RouteConfig.cs` — enables Microsoft FriendlyUrls (extensionless, SEO-friendly URLs) with permanent auto-redirects.
 - `App_Code/BundleConfig.cs` — CSS/JS bundling & minification via `System.Web.Optimization` + WebGrease.
-- `App_Code/Startup.cs` + `App_Code/Startup.Auth.cs` — OWIN startup (`[assembly: OwinStartupAttribute(typeof(PizzaGo.Startup))]`). `ConfigureAuth` wires up cookie authentication (`DefaultAuthenticationTypes.ApplicationCookie`, login path `/Account/Login`) and the external-login cookie. Third-party OAuth providers (Microsoft, Twitter, Facebook, Google) are referenced in packages but commented out/unconfigured — enabling one requires supplying real client id/secret here.
+- `App_Code/Startup.cs` + `App_Code/Startup.Auth.cs` — OWIN startup (`[assembly: OwinStartupAttribute(typeof(MasterAntiqueRepair.Startup))]`). `ConfigureAuth` wires up cookie authentication (`DefaultAuthenticationTypes.ApplicationCookie`, login path `/Account/Login`) and the external-login cookie. Third-party OAuth providers (Microsoft, Twitter, Facebook, Google) are referenced in packages but commented out/unconfigured — enabling one requires supplying real client id/secret here.
 
 ### Identity / data access
 
@@ -37,7 +37,7 @@ There is no `dotnet build`/`dotnet test` workflow here (this predates the SDK-st
   - `UserManager : UserManager<ApplicationUser>`
   - `IdentityHelper` — sign-in helper, external-login redirect URL builder, and open-redirect-safe `RedirectToReturnUrl`.
 - Connection string `DefaultConnection` in `Web.config` points at LocalDB (`(LocalDb)\MSSQLLocalDB`) using an `.mdf` file in `App_Data` (auto-created on first use — `App_Data` doesn't exist in the repo yet).
-- Account/auth pages under `PizzaGo/PizzaGo/Account/` (`Login`, `Register`, `Manage`, `RegisterExternalLogin`, `OpenAuthProviders.ascx`) follow the standard ASP.NET Identity template pattern: code-behind calls into `UserManager`/`ApplicationDbContext` directly (no repository/service layer).
+- Account/auth pages under `MasterAntiqueRepair/MasterAntiqueRepair/Account/` (`Login`, `Register`, `Manage`, `RegisterExternalLogin`, `OpenAuthProviders.ascx`) follow the standard ASP.NET Identity template pattern: code-behind calls into `UserManager`/`ApplicationDbContext` directly (no repository/service layer).
 
 ### Pages & layout
 
@@ -47,7 +47,7 @@ There is no `dotnet build`/`dotnet test` workflow here (this predates the SDK-st
 
 ### Front-end
 
-- Bootstrap 3.3.7 + jQuery 3.3.1 + Modernizr, delivered via NuGet packages under `PizzaGo/packages/` and referenced/bundled through `BundleConfig.cs`.
+- Bootstrap 3.3.7 + jQuery 3.3.1 + Modernizr, delivered via NuGet packages under `MasterAntiqueRepair/packages/` and referenced/bundled through `BundleConfig.cs`.
 - `Microsoft.AspNet.ScriptManager.WebForms`/`MSAjax` provide the WebForms `ScriptManager`/partial-postback (UpdatePanel) infrastructure.
 
 ## Project goals (Phase 1 — see README.md)
@@ -67,4 +67,4 @@ This is explicitly a "legacy build" learning exercise, not a real pizza-ordering
 - When adding a new page, follow the existing `.aspx` + `.aspx.cs` + `MasterPageFile="~/Site.Master"` pattern (see `Default.aspx`/`Default.aspx.cs`).
 - When adding shared C# logic that isn't tied to a single page, put it in `App_Code/`.
 - New domain logic should follow the layered-architecture requirement above (keep business logic and data access out of code-behind), rather than mirroring the direct-`DbContext`-from-code-behind pattern used in the pre-existing Identity/Account pages.
-- `PizzaGo/PizzaGo/Bin/` and `PizzaGo/packages/` contain restored/copied binaries — treat them as generated output, not source to edit.
+- `MasterAntiqueRepair/MasterAntiqueRepair/Bin/` and `MasterAntiqueRepair/packages/` contain restored/copied binaries — treat them as generated output, not source to edit.

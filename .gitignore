@@ -29,22 +29,22 @@ bld/
 *.userosscache
 *.sln.docstates
 
-# Classic Web Site Project (PizzaGo): NuGet-restored packages, regenerate via `nuget restore`
-PizzaGo/packages/
+# Classic Web Site Project (MasterAntiqueRepair): NuGet-restored packages, regenerate via `nuget restore`
+MasterAntiqueRepair/packages/
 
 # Bin/ holds NuGet-restored assemblies for the Web Site Project. Keep the
 # small .refresh pointer files (MSBuild/VS use them to re-copy the real DLL
 # from packages/ on any machine); ignore the actual binaries.
-PizzaGo/PizzaGo/Bin/**/*.dll
-PizzaGo/PizzaGo/Bin/**/*.pdb
-PizzaGo/PizzaGo/Bin/**/*.xml
-PizzaGo/PizzaGo/Bin/**/*.exe
-PizzaGo/PizzaGo/Bin/**/*.rsp
-PizzaGo/PizzaGo/Bin/**/*.targets
-PizzaGo/PizzaGo/Bin/**/*.config
+MasterAntiqueRepair/MasterAntiqueRepair/Bin/**/*.dll
+MasterAntiqueRepair/MasterAntiqueRepair/Bin/**/*.pdb
+MasterAntiqueRepair/MasterAntiqueRepair/Bin/**/*.xml
+MasterAntiqueRepair/MasterAntiqueRepair/Bin/**/*.exe
+MasterAntiqueRepair/MasterAntiqueRepair/Bin/**/*.rsp
+MasterAntiqueRepair/MasterAntiqueRepair/Bin/**/*.targets
+MasterAntiqueRepair/MasterAntiqueRepair/Bin/**/*.config
 
 # Output of the ASP.NET Compiler (aspnet_compiler) precompiled-site build
-PizzaGo/PrecompiledWeb/
+MasterAntiqueRepair/PrecompiledWeb/
 
 # .NET Core
 project.lock.json

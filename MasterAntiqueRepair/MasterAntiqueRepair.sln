@@ -3,18 +3,18 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.37530.8
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "PizzaGo", "PizzaGo\", "{4DC889B9-FC96-425D-8AEC-D4A82F5F9E99}"
+Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "MasterAntiqueRepair", "MasterAntiqueRepair\", "{4DC889B9-FC96-425D-8AEC-D4A82F5F9E99}"
 	ProjectSection(WebsiteProperties) = preProject
 		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.7.2"
 		Debug.AspNetCompiler.VirtualPath = "/localhost_57962"
-		Debug.AspNetCompiler.PhysicalPath = "PizzaGo\"
+		Debug.AspNetCompiler.PhysicalPath = "MasterAntiqueRepair\"
 		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_57962\"
 		Debug.AspNetCompiler.Updateable = "true"
 		Debug.AspNetCompiler.ForceOverwrite = "true"
 		Debug.AspNetCompiler.FixedNames = "false"
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.VirtualPath = "/localhost_57962"
-		Release.AspNetCompiler.PhysicalPath = "PizzaGo\"
+		Release.AspNetCompiler.PhysicalPath = "MasterAntiqueRepair\"
 		Release.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_57962\"
 		Release.AspNetCompiler.Updateable = "true"
 		Release.AspNetCompiler.ForceOverwrite = "true"
