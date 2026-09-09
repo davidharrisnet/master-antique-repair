@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/MasterAntiqueRepairCheck/Account/Register.aspx" hash="fffffffc2b329c32" filehash="9f7bc390412017d1" flags="110000" assembly="App_Web_r5wwbgst" type="ASP.account_register_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Account/Register.aspx" />
+        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Account/Register.aspx.cs" />
+        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Site.master" />
+        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Site.master.cs" />
+    </filedeps>
+</preserve>

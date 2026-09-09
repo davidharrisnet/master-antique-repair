@@ -36,7 +36,7 @@ There is no `dotnet build`/`dotnet test` workflow here (this predates the SDK-st
   - `ApplicationDbContext : IdentityDbContext<ApplicationUser>` (EF6 Code First, connection string name `"DefaultConnection"`)
   - `UserManager : UserManager<ApplicationUser>`
   - `IdentityHelper` — sign-in helper, external-login redirect URL builder, and open-redirect-safe `RedirectToReturnUrl`.
-- Connection string `DefaultConnection` in `Web.config` points at LocalDB (`(LocalDb)\MSSQLLocalDB`) using an `.mdf` file in `App_Data` (auto-created on first use — `App_Data` doesn't exist in the repo yet).
+- Connection string `DefaultConnection` in `Web.config` points at LocalDB (`(LocalDb)\MSSQLLocalDB`) using an `.mdf` file in `App_Data`, auto-created by EF6 Code First's default `CreateDatabaseIfNotExists` initializer on first use (e.g. the first Register/Login attempt) — no manual DB setup or migrations needed. The `App_Data` folder is tracked via a `.gitkeep` placeholder; the `.mdf`/`.ldf` files themselves are gitignored. (SQLite was tried and reverted — see README.md.)
 - Account/auth pages under `MasterAntiqueRepair/MasterAntiqueRepair/Account/` (`Login`, `Register`, `Manage`, `RegisterExternalLogin`, `OpenAuthProviders.ascx`) follow the standard ASP.NET Identity template pattern: code-behind calls into `UserManager`/`ApplicationDbContext` directly (no repository/service layer).
 
 ### Pages & layout

@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/MasterAntiqueRepairCheck/Contact.aspx" hash="fffffffc2b329c32" filehash="dd36db0cded073bd" flags="110000" assembly="App_Web_gbi1mg1d" type="ASP.contact_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Contact.aspx" />
+        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Contact.aspx.cs" />
+        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Site.master" />
+        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Site.master.cs" />
+    </filedeps>
+</preserve>

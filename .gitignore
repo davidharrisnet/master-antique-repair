@@ -46,6 +46,10 @@ MasterAntiqueRepair/MasterAntiqueRepair/Bin/**/*.config
 # Output of the ASP.NET Compiler (aspnet_compiler) precompiled-site build
 MasterAntiqueRepair/PrecompiledWeb/
 
+# LocalDB database files — created at runtime in App_Data, not source
+MasterAntiqueRepair/MasterAntiqueRepair/App_Data/*.mdf
+MasterAntiqueRepair/MasterAntiqueRepair/App_Data/*.ldf
+
 # .NET Core
 project.lock.json
 project.fragment.lock.json

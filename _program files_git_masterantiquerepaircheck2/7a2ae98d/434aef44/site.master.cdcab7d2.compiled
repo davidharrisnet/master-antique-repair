@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/MasterAntiqueRepairCheck2/Site.master" hash="647b9680f" filehash="b9e2bbd4e68e0ac1" flags="110000" assembly="App_Web_upwvocfa" type="ASP.site_master">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck2/Site.master" />
+        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck2/Site.master.cs" />
+    </filedeps>
+</preserve>

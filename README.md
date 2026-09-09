@@ -16,6 +16,12 @@ Install-Package Microsoft.AspNet.Web.Optimization.WebForms -Version 1.1.3
 
 The first re-copies the Roslyn compiler (`csc.exe`, `vbc.exe`, etc.) into `Bin/roslyn/`. The second adds `Microsoft.AspNet.Web.Optimization.WebForms`, which was referenced in `Bin/` but missing from `packages.config`.
 
+## Database: LocalDB
+
+This project uses LocalDB via EF6 Code First (`ApplicationDbContext` in `App_Code/IdentityModels.cs`). No manual setup is needed — the `DefaultConnection` string in `Web.config` points at `(LocalDb)\MSSQLLocalDB`, and EF6's default `CreateDatabaseIfNotExists` initializer creates the `.mdf` file in `App_Data/` (auto-created on first use, along with the full Identity schema) the first time the context is actually used — e.g. the first Register or Login attempt.
+
+(SQLite via `System.Data.SQLite.EF6` was tried and reverted — the NuGet packages available for it don't cleanly support this project's classic non-SDK Website Project type: native binary deployment relies on either `install.ps1` scripts or MSBuild `.targets` imports, and this project has neither a modern `PackageReference` build nor, in the versions tried, a working `install.ps1` path for the native SQLite engine.)
+
 PHASE 1 — Legacy Build
 Stack: ASP.NET Framework 4.7.2, C#, WebForms, SQL Server (or SQLite is fine)
 

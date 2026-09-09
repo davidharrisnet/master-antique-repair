@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/MasterAntiqueRepairCheck/Account/Manage.aspx" hash="fffffffc2b329c32" filehash="6e4eb77785796dee" flags="110000" assembly="App_Web_ar2h1u0s" type="ASP.account_manage_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Account/Manage.aspx" />
+        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Account/Manage.aspx.cs" />
+        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Account/OpenAuthProviders.ascx" />
+        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Account/OpenAuthProviders.ascx.cs" />
+        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Site.master" />
+        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Site.master.cs" />
+    </filedeps>
+</preserve>
