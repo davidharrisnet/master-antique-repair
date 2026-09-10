@@ -1,4 +1,3 @@
-﻿using Microsoft.AspNet.Identity;
 using System;
 using System.Linq;
 using System.Web.UI;
@@ -8,17 +7,35 @@ public partial class Account_Register : Page
 {
     protected void CreateUser_Click(object sender, EventArgs e)
     {
-        var manager = new UserManager();
-        var user = new ApplicationUser() { UserName = UserName.Text };
-        IdentityResult result = manager.Create(user, Password.Text);
-        if (result.Succeeded)
+        using (var db = new RepairShopContext())
         {
-            IdentityHelper.SignIn(manager, user, isPersistent: false);
+            if (db.Users.Any(u => u.Name == UserName.Text))
+            {
+                ErrorMessage.Text = "That username is already taken.";
+                return;
+            }
+
+            var customer = new Customer
+            {
+                Name = UserName.Text,
+                CreatedAt = DateTime.Now
+            };
+
+            try
+            {
+                customer.SetPassword(Password.Text);
+            }
+            catch (ArgumentException ex)
+            {
+                ErrorMessage.Text = ex.Message;
+                return;
+            }
+
+            db.Users.Add(customer);
+            db.SaveChanges();
+
+            RepairAuthHelper.SignIn(customer, isPersistent: false);
             IdentityHelper.RedirectToReturnUrl(Request.QueryString["ReturnUrl"], Response);
-        }
-        else
-        {
-            ErrorMessage.Text = result.Errors.FirstOrDefault();
         }
     }
 }

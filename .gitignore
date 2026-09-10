@@ -7,6 +7,9 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/Dotnet.gitignore
 
+# Claude Code session log — local backup artifact, not project source
+claude.log
+
 # Build results
 [Dd]ebug/
 [Dd]ebugPublic/

@@ -55,6 +55,8 @@
     <Compile Include="App_Code\Employee.cs" />
     <Compile Include="App_Code\Manager.cs" />
     <Compile Include="App_Code\Orders.cs" />
+    <Compile Include="App_Code\PasswordHasher.cs" />
+    <Compile Include="App_Code\RepairShopContext.cs" />
     <Compile Include="App_Code\State.cs" />
     <Compile Include="App_Code\UserRole.cs" />
     <Compile Include="Migrations\202609100741416_InitialCreate.cs" />

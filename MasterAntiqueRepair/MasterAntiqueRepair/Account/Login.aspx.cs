@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNet.Identity;
 using Microsoft.Owin.Security;
 using System;
+using System.Linq;
 using System.Web;
 using System.Web.UI;
 using MasterAntiqueRepair;
@@ -22,18 +23,19 @@ public partial class Account_Login : Page
         {
             if (IsValid)
             {
-                // Validate the user password
-                var manager = new UserManager();
-                ApplicationUser user = manager.Find(UserName.Text, Password.Text);
-                if (user != null)
+                using (var db = new RepairShopContext())
                 {
-                    IdentityHelper.SignIn(manager, user, RememberMe.Checked);
-                    IdentityHelper.RedirectToReturnUrl(Request.QueryString["ReturnUrl"], Response);
-                }
-                else
-                {
-                    FailureText.Text = "Invalid username or password.";
-                    ErrorMessage.Visible = true;
+                    var user = db.Users.FirstOrDefault(u => u.Name == UserName.Text);
+                    if (user != null && user.VerifyPassword(Password.Text))
+                    {
+                        RepairAuthHelper.SignIn(user, RememberMe.Checked);
+                        IdentityHelper.RedirectToReturnUrl(Request.QueryString["ReturnUrl"], Response);
+                    }
+                    else
+                    {
+                        FailureText.Text = "Invalid username or password.";
+                        ErrorMessage.Visible = true;
+                    }
                 }
             }
         }

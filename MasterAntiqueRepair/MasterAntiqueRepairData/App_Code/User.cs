@@ -18,6 +18,21 @@ namespace MasterAntiqueRepair
         public UserRole UserRole { get; set; }
         public System.DateTime CreatedAt { get; set; }
         public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+        public string PasswordHash { get; set; }
+
+        public void SetPassword(string password)
+        {
+            if (string.IsNullOrEmpty(password) || password.Length < 6)
+            {
+                throw new ArgumentException("Password must be at least 6 characters.");
+            }
+            PasswordHash = PasswordHasher.HashPassword(password);
+        }
+
+        public bool VerifyPassword(string password)
+        {
+            return !string.IsNullOrEmpty(PasswordHash) && PasswordHasher.VerifyPassword(password, PasswordHash);
+        }
     }
         
 }

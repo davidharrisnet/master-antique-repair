@@ -25,15 +25,15 @@ Non-functional requirements:
 
 This project uses LocalDB via EF6 Code First (`ApplicationDbContext` in `App_Code/IdentityModels.cs`). No manual setup is needed — the `DefaultConnection` string in `Web.config` points at `(LocalDb)\MSSQLLocalDB`, and EF6's default `CreateDatabaseIfNotExists` initializer creates the `.mdf` file in `App_Data/` (auto-created on first use, along with the full Identity schema) the first time the context is actually used — e.g. the first Register or Login attempt.
 
-### The catch: `CreateDatabaseIfNotExists` only runs once
+### The catch: `CreateDatabaseIfNotExists` only runs once *per context type*
 
-EF6 stores a hash of your model in a `__MigrationHistory` table the first time it creates a database. If you later add/change entity classes or `DbSet<T>` properties on a context whose database already exists, you'll get:
+EF6 stores a hash of your model in a `__MigrationHistory` table (tagged with a `ContextKey` per `DbContext` type) the first time each context creates its tables. If you later add/change entity classes or `DbSet<T>` properties on a context that's *already* initialized against a database, you'll get:
 
 ```
 The model backing the '<Context>' context has changed since the database was created.
 ```
 
-`CreateDatabaseIfNotExists` does **not** incrementally add the new tables — it only creates the database the very first time, and after that just checks the model hash still matches. It does not silently ignore mismatches (an earlier version of this note incorrectly said it does); it throws.
+**But this is scoped per context, not per physical database.** A *different* `DbContext` type that has never touched that database before — even if the database already exists and already has other tables in it (e.g. `ApplicationDbContext`'s Identity tables) — gets its tables created automatically the first time it's used, exactly like a fresh database. This is how `RepairShopContext` (see "Refactor: domain-backed authentication" below) got its `Users`/`Orders`/`UserRoles` tables created in the *same* database as Identity's `AspNetUsers` tables, with zero Migrations setup — confirmed by checking `INFORMATION_SCHEMA.TABLES` before and after its first use. The "model changed" exception above only fires once a *given context* already has a `__MigrationHistory` entry and its current model no longer matches it.
 
 ### Fixing it without migrations (data loss — only fine for disposable/test databases)
 
@@ -69,6 +69,19 @@ Update-Database
 ```
 
 Run both from PMC with **Default project:** set to the class library. `Add-Migration` generates a timestamped file under its `Migrations/` folder with the actual `CreateTable`/`AddColumn`/etc. calls for just the diff — open and read it, it's the real schema change in code. `Update-Database` applies it and records it in `__MigrationHistory` — no data loss, no manual resets, regardless of how many times you refactor.
+
+
+## Refactor: domain-backed authentication
+
+`Account/Register.aspx.cs` and `Account/Login.aspx.cs` no longer use ASP.NET Identity's `UserManager`/`ApplicationUser` for account storage or credential checking — they use the domain model (`Customer`/`Employee`/`Manager`, all `MasterAntiqueRepairData` classes) directly:
+
+- **Passwords**: `User.PasswordHash` + `User.SetPassword(string)`/`VerifyPassword(string)`, backed by `MasterAntiqueRepairData/App_Code/PasswordHasher.cs` — PBKDF2 via `System.Security.Cryptography.Rfc2898DeriveBytes` (10,000 iterations, random 16-byte salt per password, stored as `salt + hash` base64). Deliberately *not* `Microsoft.AspNet.Identity.PasswordHasher` — same underlying algorithm, but avoids adding another NuGet package that has to stay version-aligned across both projects (see the `EntityFramework` 6.5.1/6.5.2 mismatch earlier in this doc for why that's worth avoiding).
+- **Sign-in**: `MasterAntiqueRepair/App_Code/RepairAuthHelper.cs` (website-side, since it's `HttpContext`/OWIN-specific) builds a `ClaimsIdentity` from a domain `User` and signs in via the *existing* OWIN cookie middleware from `Startup.Auth.cs` — reuses the same cookie transport Identity was using, just sources the identity from the domain model instead of `ApplicationUser`. Must use `DefaultAuthenticationTypes.ApplicationCookie` (from `Microsoft.AspNet.Identity`, not `Microsoft.Owin.Security` — easy to get wrong) as the identity's auth type, matching what `Startup.Auth.cs`'s `CookieAuthenticationOptions.AuthenticationType` is configured for — a mismatch there means the middleware silently won't recognize the identity at all.
+- **Storage**: `MasterAntiqueRepairData/App_Code/RepairShopContext.cs` — a new, non-scratch `DbContext` (separate from `TestDbContext`, which stays untouched/scratch-only), using `DefaultConnection` — the *same* database Identity already uses. Its `Users`/`Orders`/`UserRoles` tables were created automatically alongside Identity's pre-existing `AspNetUsers` tables with zero Migrations setup, since `CreateDatabaseIfNotExists` scopes its "already initialized" check per `DbContext` type, not per database — see the corrected note above.
+- **Register scope**: the public `Register.aspx` only ever creates `Customer` accounts (with a basic duplicate-username check, since Identity's built-in validation is gone). `Employee`/`Manager` account provisioning isn't wired up yet — a natural next page, likely restricted to an authenticated `Manager`/`Owner`, not public self-service.
+- `ApplicationUser`/`ApplicationDbContext`/`UserManager` (`IdentityModels.cs`) and the external-login pages (`RegisterExternalLogin.aspx`, `OpenAuthProviders.ascx`, `Account/Manage.aspx`) are left in place but now unused/dead — not deleted, since removing that dependency chain is a separate decision from wiring up the new auth.
+
+Verified live (curl against a running instance, same method as elsewhere in this doc): Register → `HTTP 302` + real `.AspNet.ApplicationCookie` issued; Login with the same credentials → same; confirmed via `sqlcmd` that `PasswordHash` is a real hash, not the plaintext password.
 
 
 ## Fixing a fresh-restore build
