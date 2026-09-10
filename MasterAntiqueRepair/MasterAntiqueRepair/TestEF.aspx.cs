@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using System.Text;
 
 public partial class TestEF : System.Web.UI.Page
 {
@@ -7,40 +8,59 @@ public partial class TestEF : System.Web.UI.Page
     {
         using (var db = new MasterAntiqueRepair.TestDbContext())
         {
-            var item = new MasterAntiqueRepair.TestItem
+            // 1) Customers submit new Orders
+            var customers = new[]
             {
-                Name = "Hello EF",
-                CreatedAt = DateTime.Now
+                new MasterAntiqueRepair.Customer { Name = "Alice", CreatedAt = DateTime.Now },
+                new MasterAntiqueRepair.Customer { Name = "Bob", CreatedAt = DateTime.Now },
+                new MasterAntiqueRepair.Customer { Name = "Carol", CreatedAt = DateTime.Now },
             };
-            db.TestItems.Add(item);
+            var descriptions = new[] { "Repair antique clock", "Restore wooden chair", "Fix porcelain vase" };
+
+            for (int i = 0; i < customers.Length; i++)
+            {
+                var order = new MasterAntiqueRepair.Order { Description = descriptions[i] };
+                customers[i].submit(order);
+                db.Users.Add(customers[i]);
+                db.Orders.Add(order);
+            }
             db.SaveChanges();
 
-            var allItems = db.TestItems.ToList();
-            ResultLabel.Text = "Count: " + allItems.Count;
-
-
-            var manager = new MasterAntiqueRepair.UserRole
+            // 2) Employees take unassigned Orders and assign themselves
+            var employees = new[]
             {
-                UserRoleValue = MasterAntiqueRepair.UserRole.Role.MANAGER,
-               
+                new MasterAntiqueRepair.Employee { Name = "Dave", CreatedAt = DateTime.Now },
+                new MasterAntiqueRepair.Employee { Name = "Erin", CreatedAt = DateTime.Now },
             };
+            db.Users.AddRange(employees);
 
-            var user = new MasterAntiqueRepair.User
+            var unassignedOrders = db.Orders
+                .Where(o => o.User == null)
+                .OrderBy(o => o.Id)
+                .Take(employees.Length)
+                .ToList();
+
+            for (int i = 0; i < unassignedOrders.Count; i++)
             {
-                Name = "Joe",
-                UserRole = manager,
-               CreatedAt = DateTime.Now
-           };
-
-            db.Users.Add(user);
+                employees[i].TakeOrder(unassignedOrders[i]);
+            }
             db.SaveChanges();
 
-            var allUsers = db.Users.ToList();
-            UserLabel.Text = "Count " + allUsers.Count;
+            // 3) A Manager reads all Employees and their Orders
+            var manager = new MasterAntiqueRepair.Manager { Name = "Frank", CreatedAt = DateTime.Now };
+            var employeesWithOrders = manager.GetEmployeesWithOrders(db);
 
-            UserName.Text = allUsers[0].Name;
+            var summary = new StringBuilder();
+            foreach (var emp in employeesWithOrders)
+            {
+                summary.Append(emp.Name + ": ");
+                summary.Append(string.Join(", ", emp.Orders.Select(o => o.Description + " (" + o.State + ")")));
+                summary.Append("; ");
+            }
 
-            MasterAntiqueRepair.State s;
+            ResultLabel.Text = "Orders: " + db.Orders.Count();
+            UserLabel.Text = "Users: " + db.Users.Count();
+            UserName.Text = summary.ToString();
         }
     }
 }

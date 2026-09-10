@@ -12,6 +12,7 @@ namespace MasterAntiqueRepair
         public int Id { get; set; }
         public enum Role
         {
+            CUSTOMER,
             CRAFTSMAN,
             MANAGER,
             OWNER

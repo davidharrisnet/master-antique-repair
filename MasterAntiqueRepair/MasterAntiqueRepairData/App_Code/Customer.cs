@@ -6,13 +6,11 @@ using System.Threading.Tasks;
 
 namespace MasterAntiqueRepair
 {
-    public class State
+    public class Customer : MasterAntiqueRepair.User
     {
-        public enum RepairState
+        public void submit(Order order)
         {
-            SUBMITTED,
-            INPROGRESS,
-            COMPLETED
+            order.State = State.RepairState.SUBMITTED;            
         }
     }
 }

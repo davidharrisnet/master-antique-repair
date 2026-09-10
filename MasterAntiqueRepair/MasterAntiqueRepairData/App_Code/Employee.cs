@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 
 namespace MasterAntiqueRepair
 {
-    public class State
+    public class Employee : MasterAntiqueRepair.User
     {
-        public enum RepairState
+        public void TakeOrder(Order order)
         {
-            SUBMITTED,
-            INPROGRESS,
-            COMPLETED
+            order.User = this;
+            order.State = State.RepairState.INPROGRESS;
         }
     }
+
 }
