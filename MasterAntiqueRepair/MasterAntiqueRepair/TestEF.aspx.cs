@@ -18,10 +18,17 @@ public partial class TestEF : System.Web.UI.Page
             var allItems = db.TestItems.ToList();
             ResultLabel.Text = "Count: " + allItems.Count;
 
+
+            var manager = new MasterAntiqueRepair.UserRole
+            {
+                UserRoleValue = MasterAntiqueRepair.UserRole.Role.MANAGER,
+               
+            };
+
             var user = new MasterAntiqueRepair.User
             {
                 Name = "Joe",
-                Role = 2,
+                UserRole = manager,
                CreatedAt = DateTime.Now
            };
 
@@ -33,6 +40,7 @@ public partial class TestEF : System.Web.UI.Page
 
             UserName.Text = allUsers[0].Name;
 
+            MasterAntiqueRepair.State s;
         }
     }
 }

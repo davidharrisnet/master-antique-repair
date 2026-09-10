@@ -15,7 +15,7 @@ namespace MasterAntiqueRepair
           
         public int Id { get; set; }
         public string Name { get; set; }
-        public int Role { get; set; }
+        public UserRole UserRole { get; set; }
         public System.DateTime CreatedAt { get; set; }
 
     }

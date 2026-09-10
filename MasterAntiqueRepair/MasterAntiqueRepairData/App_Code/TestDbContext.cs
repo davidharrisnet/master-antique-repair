@@ -9,5 +9,11 @@ namespace MasterAntiqueRepair
         public DbSet<TestItem> TestItems { get; set; }
 
         public DbSet<User> Users { get; set; }
+
+        public DbSet<UserRole> UserRoles { get; set; }
+
+        public DbSet<State> RepairStates { get; set; }
+
+
     }
 }
