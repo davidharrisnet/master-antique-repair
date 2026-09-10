@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/MasterAntiqueRepairCheck/Account/RegisterExternalLogin.aspx" hash="fffffffc2b329c32" filehash="7eaae00d2e488ec4" flags="110000" assembly="App_Web_r5wwbgst" type="ASP.account_registerexternallogin_aspx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Account/RegisterExternalLogin.aspx" />
-        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Account/RegisterExternalLogin.aspx.cs" />
-        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Site.master" />
-        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Site.master.cs" />
-    </filedeps>
-</preserve>

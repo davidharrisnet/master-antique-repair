@@ -17,6 +17,22 @@ public partial class TestEF : System.Web.UI.Page
 
             var allItems = db.TestItems.ToList();
             ResultLabel.Text = "Count: " + allItems.Count;
+
+            var user = new MasterAntiqueRepair.User
+            {
+                Name = "Joe",
+                Role = 2,
+               CreatedAt = DateTime.Now
+           };
+
+            db.Users.Add(user);
+            db.SaveChanges();
+
+            var allUsers = db.Users.ToList();
+            UserLabel.Text = "Count " + allUsers.Count;
+
+            UserName.Text = allUsers[0].Name;
+
         }
     }
 }

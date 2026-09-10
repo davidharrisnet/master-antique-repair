@@ -6,6 +6,7 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "MasterAntiqueRepair", "MasterAntiqueRepair\", "{4DC889B9-FC96-425D-8AEC-D4A82F5F9E99}"
 	ProjectSection(WebsiteProperties) = preProject
 		TargetFrameworkMoniker = ".NETFramework,Version%3Dv4.7.2"
+		ProjectReferences = "{86808560-eb2a-4a91-9faf-87524d1c41f9}|MasterAntiqueRepairData.dll;"
 		Debug.AspNetCompiler.VirtualPath = "/localhost_57962"
 		Debug.AspNetCompiler.PhysicalPath = "MasterAntiqueRepair\"
 		Debug.AspNetCompiler.TargetPath = "PrecompiledWeb\localhost_57962\"
@@ -21,16 +22,26 @@ Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "MasterAntiqueRepair", "Mast
 		Release.AspNetCompiler.FixedNames = "false"
 		Release.AspNetCompiler.Debug = "False"
 		VWDPort = "57962"
+		SlnRelativePath = "MasterAntiqueRepair\"
 		DefaultWebSiteLanguage = "Visual C#"
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MasterAntiqueRepairData", "MasterAntiqueRepairData\MasterAntiqueRepairData.csproj", "{86808560-EB2A-4A91-9FAF-87524D1C41F9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{4DC889B9-FC96-425D-8AEC-D4A82F5F9E99}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4DC889B9-FC96-425D-8AEC-D4A82F5F9E99}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4DC889B9-FC96-425D-8AEC-D4A82F5F9E99}.Release|Any CPU.ActiveCfg = Debug|Any CPU
+		{4DC889B9-FC96-425D-8AEC-D4A82F5F9E99}.Release|Any CPU.Build.0 = Debug|Any CPU
+		{86808560-EB2A-4A91-9FAF-87524D1C41F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86808560-EB2A-4A91-9FAF-87524D1C41F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86808560-EB2A-4A91-9FAF-87524D1C41F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86808560-EB2A-4A91-9FAF-87524D1C41F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

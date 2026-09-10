@@ -1,7 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/MasterAntiqueRepairCheck/Account/OpenAuthProviders.ascx" hash="fffffffc2b329c32" filehash="4ae1c8fe4d8a1592" flags="110000" assembly="App_Web_r5wwbgst" type="ASP.account_openauthproviders_ascx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Account/OpenAuthProviders.ascx" />
-        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Account/OpenAuthProviders.ascx.cs" />
-    </filedeps>
-</preserve>

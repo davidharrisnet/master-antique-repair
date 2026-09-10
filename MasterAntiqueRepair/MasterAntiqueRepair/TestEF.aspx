@@ -9,6 +9,13 @@
         <div>
             <asp:Label runat="server" ID="ResultLabel" />
         </div>
+         <div>
+            <asp:Label runat="server" ID="UserLabel" />
+        </div>
+         <div>
+            <asp:Label runat="server" ID="UserName" />
+        </div>
+        
     </form>
 </body>
 </html>

@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/MasterAntiqueRepairCheck/Site.Mobile.master" hash="fffffffc2b329c32" filehash="f625921ba6866418" flags="110000" assembly="App_Web_gbi1mg1d" type="ASP.site_mobile_master">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Site.Mobile.master" />
-        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/Site.Mobile.master.cs" />
-        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/ViewSwitcher.ascx" />
-        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck/ViewSwitcher.ascx.cs" />
-    </filedeps>
-</preserve>

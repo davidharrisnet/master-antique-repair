@@ -1,7 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/MasterAntiqueRepairCheck2/TestEF.aspx" hash="647b9680f" filehash="5503a575bf1d02f2" flags="110000" assembly="App_Web_upwvocfa" type="ASP.testef_aspx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck2/TestEF.aspx" />
-        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck2/TestEF.aspx.cs" />
-    </filedeps>
-</preserve>

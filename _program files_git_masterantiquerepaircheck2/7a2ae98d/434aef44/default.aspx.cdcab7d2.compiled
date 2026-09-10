@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/MasterAntiqueRepairCheck2/Default.aspx" hash="647b9680f" filehash="acf2dab5fee3a961" flags="110000" assembly="App_Web_bzt4a4uo" type="ASP.default_aspx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck2/Default.aspx" />
-        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck2/Default.aspx.cs" />
-        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck2/Site.master" />
-        <filedep name="/C:/Program Files/Git/MasterAntiqueRepairCheck2/Site.master.cs" />
-    </filedeps>
-</preserve>
