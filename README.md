@@ -129,7 +129,7 @@ Entities live in `MasterAntiqueRepairData/App_Code/` (see [MasterAntiqueRepairDa
 - **`User`** — base type: `Id`, `Name`, `CreatedAt`, `PasswordHash`, `Orders` (collection). Mapped via Table-Per-Hierarchy — one `Users` table, with a `Discriminator` column identifying the concrete type.
   - **`Customer : User`** — submits repair requests.
   - **`Employee : User`** — picks up and completes repair requests. `TakeOrder(Order)` assigns an order to itself; `CompleteOrder(Order, comment)` marks one done with a comment.
-  - **`Manager : User`** — oversees employees and jobs. `GetEmployeesWithOrders(db)` returns all employees with their assigned orders.
+  - **`Manager : User`** — oversees employees, customers, and jobs. `GetEmployeesWithOrders(db)` returns all employees with their assigned orders; `GetCustomersWithOrders(db)` returns all customers with the orders they submitted.
 - **`Order`** — a repair request: `Id`, `Description`, `Comment`, `State` (see below), `Customer` (who submitted it), `User` (the employee it's assigned to, nullable until picked up), `SubmittedDate`, `AssignedDate`, `CompletedDate`.
 - **`State.RepairState`** (enum) — `SUBMITTED` → `INPROGRESS` → `COMPLETED`.
 
@@ -139,7 +139,7 @@ Entities live in `MasterAntiqueRepairData/App_Code/` (see [MasterAntiqueRepairDa
 
 **Employees** can only be created by a Manager, via `/Account/Register`. Logging in lands on `/EmployeeView`, showing two lists: unassigned jobs (each with an "Assign to Me" button) and the employee's own jobs. Each of the employee's own jobs has a "Mark Complete" button that opens a modal for entering a completion comment.
 
-**Managers** log in and land on `/ManagerView`, showing every employee with their assigned jobs, plus a separate list of unassigned jobs. Only a Manager sees the "Register" link in the nav (to create Employee accounts).
+**Managers** log in and land on `/ManagerView`, showing (in order): every employee with their assigned jobs, a list of unassigned jobs (each with the submitting customer's name), and every customer with the orders they've submitted and each order's status. Only a Manager sees the "Register" link in the nav (to create Employee accounts).
 
 There is currently no UI path to create a Manager account — one must be inserted directly into the database (see [Known limitations](#known-limitations)).
 

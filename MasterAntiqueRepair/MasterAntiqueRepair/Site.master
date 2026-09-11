@@ -16,7 +16,7 @@
 
 </head>
 <body>
-    <form runat="server">
+    <form runat="server" autocomplete="off">
         <asp:ScriptManager runat="server">
             <Scripts>
                 <%--To learn more about bundling scripts in ScriptManager see https://go.microsoft.com/fwlink/?LinkID=301884 --%>
@@ -49,7 +49,7 @@
                 </div>
                 <div class="navbar-collapse collapse">
                     <ul class="nav navbar-nav">
-                        <li><a runat="server" href="~/CustomerView">My Repairs</a></li>
+                        <li runat="server" id="CustomerViewListItem" visible="false"><a runat="server" href="~/CustomerView">My Repairs</a></li>
                         <li runat="server" id="EmployeeViewListItem" visible="false"><a runat="server" href="~/EmployeeView">My Jobs</a></li>
                         <li runat="server" id="ManagerViewListItem" visible="false"><a runat="server" href="~/ManagerView">Employees &amp; Jobs</a></li>
                     </ul>

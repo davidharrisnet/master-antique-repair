@@ -25,7 +25,7 @@ public partial class Account_Login : Page
                     var user = db.Users.FirstOrDefault(u => u.Name == UserName.Text);
                     if (user != null && user.VerifyPassword(Password.Text))
                     {
-                        RepairAuthHelper.SignIn(user, RememberMe.Checked);
+                        RepairAuthHelper.SignIn(user, isPersistent: false);
 
                         var returnUrl = Request.QueryString["ReturnUrl"];
                         if (!String.IsNullOrEmpty(returnUrl))

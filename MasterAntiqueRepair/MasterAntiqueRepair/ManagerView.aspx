@@ -26,7 +26,26 @@
         <Columns>
             <asp:BoundField DataField="Id" HeaderText="Id" />
             <asp:BoundField DataField="Description" HeaderText="Description" />
+            <asp:BoundField DataField="Customer.Name" HeaderText="Customer" />
         </Columns>
         <EmptyDataTemplate>No unassigned jobs right now.</EmptyDataTemplate>
     </asp:GridView>
+
+    <h3>Customers</h3>
+    <asp:Repeater runat="server" ID="CustomersRepeater" OnItemDataBound="CustomersRepeater_ItemDataBound">
+        <ItemTemplate>
+            <div class="panel panel-default">
+                <div class="panel-heading"><%# Eval("Key.Name") %></div>
+                <div class="panel-body">
+                    <asp:Repeater runat="server" ID="CustomerOrdersRepeater">
+                        <HeaderTemplate><ul></HeaderTemplate>
+                        <ItemTemplate>
+                            <li><%# Eval("Description") %> (<%# Eval("State") %>)</li>
+                        </ItemTemplate>
+                        <FooterTemplate></ul></FooterTemplate>
+                    </asp:Repeater>
+                </div>
+            </div>
+        </ItemTemplate>
+    </asp:Repeater>
 </asp:Content>

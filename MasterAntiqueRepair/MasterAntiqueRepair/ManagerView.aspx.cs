@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -22,7 +24,12 @@ public partial class ManagerView : Page
                 EmployeesRepeater.DataSource = employees;
                 EmployeesRepeater.DataBind();
 
+                var customers = manager.GetCustomersWithOrders(db);
+                CustomersRepeater.DataSource = customers;
+                CustomersRepeater.DataBind();
+
                 UnassignedGrid.DataSource = db.Orders
+                    .Include(o => o.Customer)
                     .Where(o => o.User == null)
                     .OrderBy(o => o.Id)
                     .ToList();
@@ -41,6 +48,19 @@ public partial class ManagerView : Page
         var employee = (Employee)e.Item.DataItem;
         var ordersRepeater = (Repeater)e.Item.FindControl("OrdersRepeater");
         ordersRepeater.DataSource = employee.Orders;
+        ordersRepeater.DataBind();
+    }
+
+    protected void CustomersRepeater_ItemDataBound(object sender, RepeaterItemEventArgs e)
+    {
+        if (e.Item.ItemType != ListItemType.Item && e.Item.ItemType != ListItemType.AlternatingItem)
+        {
+            return;
+        }
+
+        var customerOrders = (KeyValuePair<Customer, List<Order>>)e.Item.DataItem;
+        var ordersRepeater = (Repeater)e.Item.FindControl("CustomerOrdersRepeater");
+        ordersRepeater.DataSource = customerOrders.Value;
         ordersRepeater.DataBind();
     }
 }
