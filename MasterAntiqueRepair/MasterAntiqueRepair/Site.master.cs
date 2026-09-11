@@ -66,7 +66,9 @@ public partial class SiteMaster : MasterPage
 
     protected void Page_Load(object sender, EventArgs e)
     {
-
+        RegisterListItem.Visible = Context.User.IsInRole("Manager");
+        EmployeeViewListItem.Visible = Context.User.IsInRole("Employee");
+        ManagerViewListItem.Visible = Context.User.IsInRole("Manager");
     }
 
     protected void Unnamed_LoggingOut(object sender, LoginCancelEventArgs e)

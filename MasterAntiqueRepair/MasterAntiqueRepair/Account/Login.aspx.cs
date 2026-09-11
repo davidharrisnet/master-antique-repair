@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNet.Identity;
-using Microsoft.Owin.Security;
-using System;
+﻿using System;
 using System.Linq;
 using System.Web;
 using System.Web.UI;
@@ -10,8 +8,7 @@ public partial class Account_Login : Page
 {
         protected void Page_Load(object sender, EventArgs e)
         {
-            RegisterHyperLink.NavigateUrl = "Register";
-            OpenAuthLogin.ReturnUrl = Request.QueryString["ReturnUrl"];
+            RegisterHyperLink.NavigateUrl = "CustomerSignUp";
             var returnUrl = HttpUtility.UrlEncode(Request.QueryString["ReturnUrl"]);
             if (!String.IsNullOrEmpty(returnUrl))
             {
@@ -29,7 +26,28 @@ public partial class Account_Login : Page
                     if (user != null && user.VerifyPassword(Password.Text))
                     {
                         RepairAuthHelper.SignIn(user, RememberMe.Checked);
-                        IdentityHelper.RedirectToReturnUrl(Request.QueryString["ReturnUrl"], Response);
+
+                        var returnUrl = Request.QueryString["ReturnUrl"];
+                        if (!String.IsNullOrEmpty(returnUrl))
+                        {
+                            IdentityHelper.RedirectToReturnUrl(returnUrl, Response);
+                        }
+                        else if (user is Employee)
+                        {
+                            Response.Redirect("~/EmployeeView");
+                        }
+                        else if (user is Manager)
+                        {
+                            Response.Redirect("~/ManagerView");
+                        }
+                        else if (user is Customer)
+                        {
+                            Response.Redirect("~/CustomerView");
+                        }
+                        else
+                        {
+                            Response.Redirect("~/");
+                        }
                     }
                     else
                     {

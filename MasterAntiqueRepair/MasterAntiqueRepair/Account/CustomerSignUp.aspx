@@ -1,16 +1,13 @@
-﻿<%@ Page Title="Add Employee" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeFile="Register.aspx.cs" Inherits="Account_Register" %>
+<%@ Page Title="Sign Up" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeFile="CustomerSignUp.aspx.cs" Inherits="Account_CustomerSignUp" %>
 
 <asp:Content runat="server" ID="BodyContent" ContentPlaceHolderID="MainContent">
     <h2><%: Title %>.</h2>
     <p class="text-danger">
         <asp:Literal runat="server" ID="ErrorMessage" />
     </p>
-    <p class="text-success">
-        <asp:Literal runat="server" ID="SuccessMessage" />
-    </p>
 
     <div class="form-horizontal">
-        <h4>Create a new employee account.</h4>
+        <h4>Create an account to submit and track repair requests.</h4>
         <hr />
         <asp:ValidationSummary runat="server" CssClass="text-danger" />
         <div class="form-group">
@@ -41,9 +38,8 @@
         </div>
         <div class="form-group">
             <div class="col-md-offset-2 col-md-10">
-                <asp:Button runat="server" OnClick="CreateUser_Click" Text="Register" CssClass="btn btn-default" />
+                <asp:Button runat="server" OnClick="SignUp_Click" Text="Sign Up" CssClass="btn btn-default" />
             </div>
         </div>
     </div>
 </asp:Content>
-

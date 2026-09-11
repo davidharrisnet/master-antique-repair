@@ -28,6 +28,8 @@ Project("{E24C65DC-7377-472B-9ABA-BC803B73C61A}") = "MasterAntiqueRepair", "Mast
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MasterAntiqueRepairData", "MasterAntiqueRepairData\MasterAntiqueRepairData.csproj", "{86808560-EB2A-4A91-9FAF-87524D1C41F9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MasterAntiqueRepairScratch", "MasterAntiqueRepairScratch\MasterAntiqueRepairScratch.csproj", "{D2A7924F-0E67-44E6-98A6-1CC8BEC1CE14}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -42,6 +44,10 @@ Global
 		{86808560-EB2A-4A91-9FAF-87524D1C41F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{86808560-EB2A-4A91-9FAF-87524D1C41F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{86808560-EB2A-4A91-9FAF-87524D1C41F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D2A7924F-0E67-44E6-98A6-1CC8BEC1CE14}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2A7924F-0E67-44E6-98A6-1CC8BEC1CE14}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2A7924F-0E67-44E6-98A6-1CC8BEC1CE14}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2A7924F-0E67-44E6-98A6-1CC8BEC1CE14}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -58,7 +58,6 @@
     <Compile Include="App_Code\PasswordHasher.cs" />
     <Compile Include="App_Code\RepairShopContext.cs" />
     <Compile Include="App_Code\State.cs" />
-    <Compile Include="App_Code\UserRole.cs" />
     <Compile Include="Migrations\202609100741416_InitialCreate.cs" />
     <Compile Include="Migrations\202609100741416_InitialCreate.designer.cs">
       <DependentUpon>202609100741416_InitialCreate.cs</DependentUpon>
@@ -80,6 +79,11 @@
       <DependentUpon>202609101346412_AddCustomer.cs</DependentUpon>
     </Compile>
     <Compile Include="Migrations\Configuration.cs" />
+    <Compile Include="Migrations\RepairShop\202609101537112_InitialCreate.cs" />
+    <Compile Include="Migrations\RepairShop\202609101537112_InitialCreate.designer.cs">
+      <DependentUpon>202609101537112_InitialCreate.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\RepairShop\Configuration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="App_Code\Order.cs" />
     <Compile Include="App_Code\TestDbContext.cs" />
@@ -105,6 +109,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202609101346412_AddCustomer.resx">
       <DependentUpon>202609101346412_AddCustomer.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\RepairShop\202609101537112_InitialCreate.resx">
+      <DependentUpon>202609101537112_InitialCreate.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

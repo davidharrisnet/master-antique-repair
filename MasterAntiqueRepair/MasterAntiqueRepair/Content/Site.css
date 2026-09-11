@@ -1,7 +1,19 @@
 ﻿/* Move down content because we have a fixed navbar that is 50px tall */
+/* Also: sticky footer - body/form/.body-content form a flex column so the
+   footer stays pinned to the bottom of the viewport even on short pages,
+   instead of floating up directly under sparse content. */
 body {
     padding-top: 50px;
     padding-bottom: 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+body > form {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
 /* Wrapping element */
@@ -9,6 +21,14 @@ body {
 .body-content {
     padding-left: 15px;
     padding-right: 15px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.body-content footer {
+    margin-top: auto;
+    padding-top: 20px;
 }
 
 /* Set widths on the form inputs since otherwise they're 100% wide */

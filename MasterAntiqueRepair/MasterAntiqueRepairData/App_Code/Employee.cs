@@ -12,6 +12,14 @@ namespace MasterAntiqueRepair
         {
             order.User = this;
             order.State = State.RepairState.INPROGRESS;
+            order.AssignedDate = DateTime.Now;
+        }
+
+        public void CompleteOrder(Order order, string comment)
+        {
+            order.State = State.RepairState.COMPLETED;
+            order.Comment = comment;
+            order.CompletedDate = DateTime.Now;
         }
     }
 
