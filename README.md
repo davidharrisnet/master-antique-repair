@@ -23,10 +23,21 @@ A repair-shop tracking application: customers submit repair requests for antique
 
 This project is a legacy ASP.NET Web Forms app with several non-obvious setup gotchas (classic tooling, Windows-only, no `dotnet` CLI). The steps below take a fresh clone to a fully working local instance, in the order that actually works — each has been run and verified for real (see `claude.log` for the verification trail), not just written from memory.
 
-**Quick start** — once the prerequisites in step 1 are installed, this is the whole database side of setup, no Visual Studio required:
+**Quick start** — once the prerequisites in step 1 are installed, this is the whole database side of setup, no Visual Studio required. All of this is one-time per machine except the last two lines:
 ```powershell
-# One-time only per machine — allows these local scripts to run
+# Allows these local scripts to run
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Put MSBuild on PATH — Initialize-Database.ps1 (below) needs it to build MasterAntiqueRepairScratch.
+# Skip this ONLY if `Get-Command msbuild` already resolves (e.g. you've already done this, or you're
+# running from a Developer PowerShell for VS prompt).
+$vswhere = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
+$msbuildDir = Split-Path (& $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe)
+$currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
+if ($currentPath -notlike "*$msbuildDir*") {
+    [Environment]::SetEnvironmentVariable("PATH", "$currentPath;$msbuildDir", "User")
+}
+# Open a NEW PowerShell window from here on — PATH changes above don't apply to this one.
 
 # Build the schema (see step 6 for how this works without F5)
 .\Scripts\Initialize-Database.ps1
@@ -34,7 +45,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 # Seed the Manager + two Employee accounts (see "Seeding initial accounts")
 .\Scripts\Seed-InitialUsers.ps1
 ```
-Then log in at `/Account/Login` (F5 in Visual Studio to actually run the site) as `manager` / `ManagerPass123!`. The full walkthrough below covers the rest (build/restore, MSBuild on PATH, troubleshooting) — read it in full the first time; this block is just the part worth copy-pasting on every subsequent fresh checkout.
+Then log in at `/Account/Login` (F5 in Visual Studio to actually run the site) as `manager` / `ManagerPass123!`. The full walkthrough below covers the rest (build/restore, troubleshooting) — read it in full the first time; this block is just the part worth copy-pasting on every subsequent fresh checkout.
 
 1. **Install prerequisites**:
 
@@ -69,7 +80,7 @@ Then log in at `/Account/Login` (F5 in Visual Studio to actually run the site) a
    Install-Package Microsoft.AspNet.Web.Optimization.WebForms -Version 1.1.3
    ```
 
-4. **Put MSBuild on PATH.** EF6 Migrations tooling (Package Manager Console's `Add-Migration`/`Update-Database`) shells out to `msbuild.exe` by bare name internally. If it's missing from PATH, those commands fail with a `Process.Start`-related error from inside `EntityFramework.psm1`. You only hit this if you add or apply a migration yourself (day-to-day setup doesn't need it), but it's cheap to fix now. In an **elevated-not-required** PowerShell prompt:
+4. **Put MSBuild on PATH.** Two things need this: EF6 Migrations tooling (Package Manager Console's `Add-Migration`/`Update-Database`) shells out to `msbuild.exe` by bare name internally, and `Scripts/Initialize-Database.ps1` (step 6) uses it to build `MasterAntiqueRepairScratch`. Without it, PMC migration commands fail with a `Process.Start`-related error from inside `EntityFramework.psm1`, and `Initialize-Database.ps1` fails with `msbuild isn't on PATH`. In an **elevated-not-required** PowerShell prompt:
    ```powershell
    $vswhere = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
    $msbuildDir = Split-Path (& $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe)
