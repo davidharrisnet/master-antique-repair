@@ -3,6 +3,17 @@
 <asp:Content runat="server" ID="BodyContent" ContentPlaceHolderID="MainContent">
     <h2><%: Title %>.</h2>
 
+    <div class="row">
+        <div class="col-sm-3">
+            <ul class="nav nav-pills nav-stacked">
+                <li runat="server" id="TicketSearchTabItem"><a href="#TicketSearchPane" data-toggle="pill">Ticket Search</a></li>
+                <li runat="server" id="CustomerSearchTabItem"><a href="#CustomerSearchPane" data-toggle="pill">Customer Search</a></li>
+                <li runat="server" id="EmployeeSearchTabItem"><a href="#EmployeeSearchPane" data-toggle="pill">Employee Search</a></li>
+            </ul>
+        </div>
+        <div class="col-sm-9">
+            <div class="tab-content">
+    <div runat="server" id="TicketSearchPane" ClientIDMode="Static">
     <asp:UpdatePanel runat="server" ID="TicketSearchUpdatePanel" UpdateMode="Always">
         <ContentTemplate>
     <h3>Ticket Search</h3>
@@ -70,9 +81,9 @@
     </asp:Panel>
         </ContentTemplate>
     </asp:UpdatePanel>
+    </div>
 
-    <hr />
-
+    <div runat="server" id="CustomerSearchPane" ClientIDMode="Static">
     <asp:UpdatePanel runat="server" ID="CustomerSearchUpdatePanel" UpdateMode="Always">
         <ContentTemplate>
     <h3>Customer Search</h3>
@@ -127,9 +138,9 @@
     </asp:Panel>
         </ContentTemplate>
     </asp:UpdatePanel>
+    </div>
 
-    <hr />
-
+    <div runat="server" id="EmployeeSearchPane" ClientIDMode="Static">
     <asp:UpdatePanel runat="server" ID="EmployeeSearchUpdatePanel" UpdateMode="Always">
         <ContentTemplate>
     <h3>Employee Search</h3>
@@ -184,6 +195,10 @@
     </asp:Panel>
         </ContentTemplate>
     </asp:UpdatePanel>
+    </div>
+            </div>
+        </div>
+    </div>
 
     <script type="text/javascript">
         function initPopovers() {

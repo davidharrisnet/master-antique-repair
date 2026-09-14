@@ -48,6 +48,35 @@ public partial class TicketDetailView : Page
                 ShowEmployee(employeeId);
             }
         }
+
+        SetActiveTab(DetermineInitialTab());
+    }
+
+    // Which left-column tab should start active, based on which cross-link (if any)
+    // brought the visitor here - e.g. a customer/employee id link from another page
+    // should land straight on that search, not always default back to Ticket Search.
+    private string DetermineInitialTab()
+    {
+        if (!string.IsNullOrEmpty(Request.QueryString["employeeId"]))
+        {
+            return "employee";
+        }
+        if (!string.IsNullOrEmpty(Request.QueryString["customerId"]))
+        {
+            return "customer";
+        }
+        return "ticket";
+    }
+
+    private void SetActiveTab(string tab)
+    {
+        TicketSearchTabItem.Attributes["class"] = tab == "ticket" ? "active" : "";
+        CustomerSearchTabItem.Attributes["class"] = tab == "customer" ? "active" : "";
+        EmployeeSearchTabItem.Attributes["class"] = tab == "employee" ? "active" : "";
+
+        TicketSearchPane.Attributes["class"] = "tab-pane" + (tab == "ticket" ? " active" : "");
+        CustomerSearchPane.Attributes["class"] = "tab-pane" + (tab == "customer" ? " active" : "");
+        EmployeeSearchPane.Attributes["class"] = "tab-pane" + (tab == "employee" ? " active" : "");
     }
 
     private static string BuildPersonLink(int id, string name, string queryParam)
