@@ -3,6 +3,8 @@
 <asp:Content runat="server" ID="BodyContent" ContentPlaceHolderID="MainContent">
     <h2><%: Title %>.</h2>
 
+    <asp:UpdatePanel runat="server" ID="TicketSearchUpdatePanel" UpdateMode="Always">
+        <ContentTemplate>
     <h3>Ticket Search</h3>
     <div class="form-inline" style="margin-bottom: 15px;">
         <div class="form-group">
@@ -66,9 +68,13 @@
         </asp:Repeater>
         <asp:Label runat="server" ID="NoCustomerCommentsLabel" Text="(none)" Visible="false" />
     </asp:Panel>
+        </ContentTemplate>
+    </asp:UpdatePanel>
 
     <hr />
 
+    <asp:UpdatePanel runat="server" ID="CustomerSearchUpdatePanel" UpdateMode="Always">
+        <ContentTemplate>
     <h3>Customer Search</h3>
     <div class="form-inline" style="margin-bottom: 15px;">
         <div class="form-group">
@@ -119,9 +125,13 @@
         </table>
         <asp:Label runat="server" ID="NoCustomerTicketsLabel" Text="(none)" Visible="false" />
     </asp:Panel>
+        </ContentTemplate>
+    </asp:UpdatePanel>
 
     <hr />
 
+    <asp:UpdatePanel runat="server" ID="EmployeeSearchUpdatePanel" UpdateMode="Always">
+        <ContentTemplate>
     <h3>Employee Search</h3>
     <div class="form-inline" style="margin-bottom: 15px;">
         <div class="form-group">
@@ -172,10 +182,21 @@
         </table>
         <asp:Label runat="server" ID="NoEmployeeTicketsLabel" Text="(none)" Visible="false" />
     </asp:Panel>
+        </ContentTemplate>
+    </asp:UpdatePanel>
 
     <script type="text/javascript">
-        $(function () {
+        function initPopovers() {
             $('[data-toggle="popover"]').popover();
+        }
+
+        $(function () {
+            initPopovers();
+            if (typeof (Sys) !== 'undefined' && Sys.WebForms && Sys.WebForms.PageRequestManager) {
+                Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function () {
+                    initPopovers();
+                });
+            }
         });
     </script>
 </asp:Content>

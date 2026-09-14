@@ -3,6 +3,8 @@
 <asp:Content runat="server" ID="BodyContent" ContentPlaceHolderID="MainContent">
     <h2><%: Title %>.</h2>
 
+    <asp:UpdatePanel runat="server" ID="AuditLogUpdatePanel" UpdateMode="Always">
+        <ContentTemplate>
     <div class="form-inline" style="margin-bottom: 15px;">
         <div class="form-group">
             <asp:Label runat="server" AssociatedControlID="EntityIdSearchText">Entity Id</asp:Label>
@@ -38,4 +40,6 @@
         <PagerStyle CssClass="text-center" />
         <EmptyDataTemplate>No activity logged yet.</EmptyDataTemplate>
     </asp:GridView>
+        </ContentTemplate>
+    </asp:UpdatePanel>
 </asp:Content>
