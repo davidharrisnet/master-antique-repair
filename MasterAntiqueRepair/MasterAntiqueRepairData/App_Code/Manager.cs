@@ -6,21 +6,21 @@ namespace MasterAntiqueRepair
 {
     public class Manager : User
     {
-        public List<Employee> GetEmployeesWithOrders(DbContext db)
+        public List<Employee> GetEmployeesWithTickets(DbContext db)
         {
             return db.Set<Employee>().ToList();
         }
 
-        public Dictionary<Customer, List<Order>> GetCustomersWithOrders(DbContext db)
+        public Dictionary<Customer, List<Ticket>> GetCustomersWithTickets(DbContext db)
         {
-            // Customer doesn't have its own Orders collection - the inherited User.Orders
-            // maps to Order.User (the assigned employee's Id), a separate relationship
-            // from Order.Customer (who submitted it). Look submitted orders up directly
+            // Customer doesn't have its own Tickets collection - the inherited User.Tickets
+            // maps to Ticket.User (the assigned employee's Id), a separate relationship
+            // from Ticket.Customer (who submitted it). Look submitted tickets up directly
             // instead of relying on a navigation property that would (silently) always be
             // empty for a Customer.
             var customers = db.Set<Customer>().ToList();
-            var orders = db.Set<Order>().Where(o => o.Customer != null).ToList();
-            return customers.ToDictionary(c => c, c => orders.Where(o => o.Customer.Id == c.Id).ToList());
+            var tickets = db.Set<Ticket>().Where(o => o.Customer != null).ToList();
+            return customers.ToDictionary(c => c, c => tickets.Where(o => o.Customer.Id == c.Id).ToList());
         }
     }
 }

@@ -21,11 +21,11 @@ namespace MasterAntiqueRepairScratch
             // separate scratch database TestDbContext/TestEF.aspx uses.
             using (var db = new RepairShopContext())
             {
-                var orders = db.Orders.OrderBy(o => o.Id).ToList();
-                Console.WriteLine("Orders: " + orders.Count);
-                foreach (var order in orders)
+                var tickets = db.Tickets.OrderBy(o => o.Id).ToList();
+                Console.WriteLine("Tickets: " + tickets.Count);
+                foreach (var ticket in tickets)
                 {
-                    Console.WriteLine("  #{0}: {1} ({2})", order.Id, order.Description, order.State);
+                    Console.WriteLine("  #{0}: {1} ({2})", ticket.Id, ticket.Description, ticket.State);
                 }
             }
 

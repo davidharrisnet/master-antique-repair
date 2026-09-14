@@ -1,9 +1,9 @@
-<%@ Page Title="My Jobs" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeFile="EmployeeView.aspx.cs" Inherits="EmployeeView" %>
+<%@ Page Title="My Tickets" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeFile="EmployeeView.aspx.cs" Inherits="EmployeeView" %>
 
 <asp:Content runat="server" ID="BodyContent" ContentPlaceHolderID="MainContent">
     <h2><%: Title %>.</h2>
 
-    <h3>Unassigned Jobs</h3>
+    <h3>Unassigned Tickets</h3>
     <asp:GridView runat="server" ID="UnassignedGrid" AutoGenerateColumns="false" CssClass="table"
         OnRowCommand="UnassignedGrid_RowCommand">
         <Columns>
@@ -16,11 +16,11 @@
                 </ItemTemplate>
             </asp:TemplateField>
         </Columns>
-        <EmptyDataTemplate>No unassigned jobs right now.</EmptyDataTemplate>
+        <EmptyDataTemplate>No unassigned tickets right now.</EmptyDataTemplate>
     </asp:GridView>
 
-    <h3>My Jobs</h3>
-    <asp:GridView runat="server" ID="MyJobsGrid" AutoGenerateColumns="false" CssClass="table">
+    <h3>My Tickets</h3>
+    <asp:GridView runat="server" ID="MyTicketsGrid" AutoGenerateColumns="false" CssClass="table">
         <Columns>
             <asp:BoundField DataField="Id" HeaderText="Id" />
             <asp:BoundField DataField="Description" HeaderText="Description" />
@@ -39,7 +39,7 @@
                 </ItemTemplate>
             </asp:TemplateField>
         </Columns>
-        <EmptyDataTemplate>You haven't picked up any jobs yet.</EmptyDataTemplate>
+        <EmptyDataTemplate>You haven't picked up any tickets yet.</EmptyDataTemplate>
     </asp:GridView>
 
     <div class="modal fade" id="completeModal" tabindex="-1" role="dialog" aria-labelledby="completeModalLabel">
@@ -51,7 +51,7 @@
                 </div>
                 <div class="modal-body">
                     <p id="completeModalDescription"></p>
-                    <asp:HiddenField runat="server" ID="CompleteOrderId" />
+                    <asp:HiddenField runat="server" ID="CompleteTicketId" />
                     <div class="form-group">
                         <asp:Label runat="server" AssociatedControlID="ModalCommentBox">Comment</asp:Label>
                         <asp:TextBox runat="server" ID="ModalCommentBox" TextMode="MultiLine" Rows="3" CssClass="form-control" />
@@ -66,8 +66,8 @@
     </div>
 
     <script type="text/javascript">
-        function openCompleteModal(orderId, description) {
-            document.getElementById('<%= CompleteOrderId.ClientID %>').value = orderId;
+        function openCompleteModal(ticketId, description) {
+            document.getElementById('<%= CompleteTicketId.ClientID %>').value = ticketId;
             document.getElementById('completeModalDescription').innerText = description;
             $('#completeModal').modal('show');
         }

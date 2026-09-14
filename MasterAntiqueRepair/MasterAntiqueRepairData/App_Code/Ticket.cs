@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace MasterAntiqueRepair
 {
-    public class Order
+    public class Ticket
     {
         public int Id { get; set; }
         public User User { get; set; }
@@ -18,9 +18,9 @@ namespace MasterAntiqueRepair
         public DateTime? AssignedDate { get; set; }
         public DateTime? CompletedDate { get; set; }
 
-        public static Order CreateSubmitted(string description, Customer customer)
+        public static Ticket CreateSubmitted(string description, Customer customer)
         {
-            return new Order
+            return new Ticket
             {
                 Description = description,
                 Customer = customer,

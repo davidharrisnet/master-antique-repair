@@ -50,7 +50,7 @@
                 <div class="navbar-collapse collapse">
                     <ul class="nav navbar-nav">
                         <li runat="server" id="CustomerViewListItem" visible="false"><a runat="server" href="~/CustomerView">My Repairs</a></li>
-                        <li runat="server" id="EmployeeViewListItem" visible="false"><a runat="server" href="~/EmployeeView">My Jobs</a></li>
+                        <li runat="server" id="EmployeeViewListItem" visible="false"><a runat="server" href="~/EmployeeView">My Tickets</a></li>
                         <li runat="server" id="ManagerViewListItem" visible="false"><a runat="server" href="~/ManagerView">Employees &amp; Jobs</a></li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right">

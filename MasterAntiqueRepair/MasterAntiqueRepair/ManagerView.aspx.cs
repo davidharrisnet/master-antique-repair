@@ -20,15 +20,15 @@ public partial class ManagerView : Page
             using (var db = new RepairShopContext())
             {
                 var manager = new Manager();
-                var employees = manager.GetEmployeesWithOrders(db);
+                var employees = manager.GetEmployeesWithTickets(db);
                 EmployeesRepeater.DataSource = employees;
                 EmployeesRepeater.DataBind();
 
-                var customers = manager.GetCustomersWithOrders(db);
+                var customers = manager.GetCustomersWithTickets(db);
                 CustomersRepeater.DataSource = customers;
                 CustomersRepeater.DataBind();
 
-                UnassignedGrid.DataSource = db.Orders
+                UnassignedGrid.DataSource = db.Tickets
                     .Include(o => o.Customer)
                     .Where(o => o.User == null)
                     .OrderBy(o => o.Id)
@@ -46,9 +46,9 @@ public partial class ManagerView : Page
         }
 
         var employee = (Employee)e.Item.DataItem;
-        var ordersRepeater = (Repeater)e.Item.FindControl("OrdersRepeater");
-        ordersRepeater.DataSource = employee.Orders;
-        ordersRepeater.DataBind();
+        var ticketsRepeater = (Repeater)e.Item.FindControl("TicketsRepeater");
+        ticketsRepeater.DataSource = employee.Tickets;
+        ticketsRepeater.DataBind();
     }
 
     protected void CustomersRepeater_ItemDataBound(object sender, RepeaterItemEventArgs e)
@@ -58,9 +58,9 @@ public partial class ManagerView : Page
             return;
         }
 
-        var customerOrders = (KeyValuePair<Customer, List<Order>>)e.Item.DataItem;
-        var ordersRepeater = (Repeater)e.Item.FindControl("CustomerOrdersRepeater");
-        ordersRepeater.DataSource = customerOrders.Value;
-        ordersRepeater.DataBind();
+        var customerTickets = (KeyValuePair<Customer, List<Ticket>>)e.Item.DataItem;
+        var ticketsRepeater = (Repeater)e.Item.FindControl("CustomerTicketsRepeater");
+        ticketsRepeater.DataSource = customerTickets.Value;
+        ticketsRepeater.DataBind();
     }
 }

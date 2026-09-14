@@ -8,7 +8,7 @@ public partial class TestEF : System.Web.UI.Page
     {
         using (var db = new MasterAntiqueRepair.TestDbContext())
         {
-            // 1) Customers submit new Orders
+            // 1) Customers submit new Tickets
             var customers = new[]
             {
                 new MasterAntiqueRepair.Customer { Name = "Alice", CreatedAt = DateTime.Now },
@@ -19,14 +19,14 @@ public partial class TestEF : System.Web.UI.Page
 
             for (int i = 0; i < customers.Length; i++)
             {
-                var order = new MasterAntiqueRepair.Order { Description = descriptions[i] };
-                customers[i].submit(order);
+                var ticket = new MasterAntiqueRepair.Ticket { Description = descriptions[i] };
+                customers[i].submit(ticket);
                 db.Users.Add(customers[i]);
-                db.Orders.Add(order);
+                db.Tickets.Add(ticket);
             }
             db.SaveChanges();
 
-            // 2) Employees take unassigned Orders and assign themselves
+            // 2) Employees take unassigned Tickets and assign themselves
             var employees = new[]
             {
                 new MasterAntiqueRepair.Employee { Name = "Dave", CreatedAt = DateTime.Now },
@@ -34,31 +34,31 @@ public partial class TestEF : System.Web.UI.Page
             };
             db.Users.AddRange(employees);
 
-            var unassignedOrders = db.Orders
+            var unassignedTickets = db.Tickets
                 .Where(o => o.User == null)
                 .OrderBy(o => o.Id)
                 .Take(employees.Length)
                 .ToList();
 
-            for (int i = 0; i < unassignedOrders.Count; i++)
+            for (int i = 0; i < unassignedTickets.Count; i++)
             {
-                employees[i].TakeOrder(unassignedOrders[i]);
+                employees[i].TakeTicket(unassignedTickets[i]);
             }
             db.SaveChanges();
 
-            // 3) A Manager reads all Employees and their Orders
+            // 3) A Manager reads all Employees and their Tickets
             var manager = new MasterAntiqueRepair.Manager { Name = "Frank", CreatedAt = DateTime.Now };
-            var employeesWithOrders = manager.GetEmployeesWithOrders(db);
+            var employeesWithTickets = manager.GetEmployeesWithTickets(db);
 
             var summary = new StringBuilder();
-            foreach (var emp in employeesWithOrders)
+            foreach (var emp in employeesWithTickets)
             {
                 summary.Append(emp.Name + ": ");
-                summary.Append(string.Join(", ", emp.Orders.Select(o => o.Description + " (" + o.State + ")")));
+                summary.Append(string.Join(", ", emp.Tickets.Select(o => o.Description + " (" + o.State + ")")));
                 summary.Append("; ");
             }
 
-            ResultLabel.Text = "Orders: " + db.Orders.Count();
+            ResultLabel.Text = "Tickets: " + db.Tickets.Count();
             UserLabel.Text = "Users: " + db.Users.Count();
             UserName.Text = summary.ToString();
         }

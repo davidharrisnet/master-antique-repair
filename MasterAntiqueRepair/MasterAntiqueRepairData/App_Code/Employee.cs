@@ -8,18 +8,18 @@ namespace MasterAntiqueRepair
 {
     public class Employee : MasterAntiqueRepair.User
     {
-        public void TakeOrder(Order order)
+        public void TakeTicket(Ticket ticket)
         {
-            order.User = this;
-            order.State = State.RepairState.INPROGRESS;
-            order.AssignedDate = DateTime.Now;
+            ticket.User = this;
+            ticket.State = State.RepairState.INPROGRESS;
+            ticket.AssignedDate = DateTime.Now;
         }
 
-        public void CompleteOrder(Order order, string comment)
+        public void CompleteTicket(Ticket ticket, string comment)
         {
-            order.State = State.RepairState.COMPLETED;
-            order.Comment = comment;
-            order.CompletedDate = DateTime.Now;
+            ticket.State = State.RepairState.COMPLETED;
+            ticket.Comment = comment;
+            ticket.CompletedDate = DateTime.Now;
         }
     }
 

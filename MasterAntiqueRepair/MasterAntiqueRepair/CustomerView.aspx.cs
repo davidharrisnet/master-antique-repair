@@ -18,11 +18,11 @@ public partial class CustomerView : Page
 
             using (var db = new RepairShopContext())
             {
-                MyOrdersGrid.DataSource = db.Orders
+                MyTicketsGrid.DataSource = db.Tickets
                     .Where(o => o.Customer != null && o.Customer.Id == customerId)
                     .OrderByDescending(o => o.Id)
                     .ToList();
-                MyOrdersGrid.DataBind();
+                MyTicketsGrid.DataBind();
             }
         }
     }

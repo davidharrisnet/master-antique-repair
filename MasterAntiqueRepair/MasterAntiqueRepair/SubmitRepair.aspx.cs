@@ -32,8 +32,8 @@ public partial class SubmitRepair : Page
                 return;
             }
 
-            var order = Order.CreateSubmitted(Description.Text, customer);
-            db.Orders.Add(order);
+            var ticket = Ticket.CreateSubmitted(Description.Text, customer);
+            db.Tickets.Add(ticket);
             db.SaveChanges();
         }
 

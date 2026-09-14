@@ -9,7 +9,7 @@
             <div class="panel panel-default">
                 <div class="panel-heading"><%# Eval("Name") %></div>
                 <div class="panel-body">
-                    <asp:Repeater runat="server" ID="OrdersRepeater">
+                    <asp:Repeater runat="server" ID="TicketsRepeater">
                         <HeaderTemplate><ul></HeaderTemplate>
                         <ItemTemplate>
                             <li><%# Eval("Description") %> (<%# Eval("State") %>)</li>
@@ -21,14 +21,14 @@
         </ItemTemplate>
     </asp:Repeater>
 
-    <h3>Unassigned Jobs</h3>
+    <h3>Unassigned Tickets</h3>
     <asp:GridView runat="server" ID="UnassignedGrid" AutoGenerateColumns="false" CssClass="table">
         <Columns>
             <asp:BoundField DataField="Id" HeaderText="Id" />
             <asp:BoundField DataField="Description" HeaderText="Description" />
             <asp:BoundField DataField="Customer.Name" HeaderText="Customer" />
         </Columns>
-        <EmptyDataTemplate>No unassigned jobs right now.</EmptyDataTemplate>
+        <EmptyDataTemplate>No unassigned tickets right now.</EmptyDataTemplate>
     </asp:GridView>
 
     <h3>Customers</h3>
@@ -37,7 +37,7 @@
             <div class="panel panel-default">
                 <div class="panel-heading"><%# Eval("Key.Name") %></div>
                 <div class="panel-body">
-                    <asp:Repeater runat="server" ID="CustomerOrdersRepeater">
+                    <asp:Repeater runat="server" ID="CustomerTicketsRepeater">
                         <HeaderTemplate><ul></HeaderTemplate>
                         <ItemTemplate>
                             <li><%# Eval("Description") %> (<%# Eval("State") %>)</li>

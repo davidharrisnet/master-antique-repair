@@ -16,7 +16,7 @@ namespace MasterAntiqueRepair
         public int Id { get; set; }
         public string Name { get; set; }
         public System.DateTime CreatedAt { get; set; }
-        public virtual ICollection<Order> Orders { get; set; } = new List<Order>();
+        public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
         public string PasswordHash { get; set; }
 
         public void SetPassword(string password)

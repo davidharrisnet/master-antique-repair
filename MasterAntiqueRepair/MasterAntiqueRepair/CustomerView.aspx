@@ -3,10 +3,10 @@
 <asp:Content runat="server" ID="BodyContent" ContentPlaceHolderID="MainContent">
     <h2><%: Title %>.</h2>
 
-    <p><a runat="server" href="~/SubmitRepair" class="btn btn-default">Submit a new repair</a></p>
+    <p><a runat="server" href="~/SubmitRepair" class="btn btn-default">Submit a new repair request</a></p>
 
     <h3>My Repair Requests</h3>
-    <asp:GridView runat="server" ID="MyOrdersGrid" AutoGenerateColumns="false" CssClass="table">
+    <asp:GridView runat="server" ID="MyTicketsGrid" AutoGenerateColumns="false" CssClass="table">
         <Columns>
             <asp:BoundField DataField="Id" HeaderText="Id" />
             <asp:BoundField DataField="Description" HeaderText="Description" />

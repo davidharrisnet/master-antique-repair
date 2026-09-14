@@ -25,17 +25,17 @@ public partial class EmployeeView : Page
         {
             var employeeId = RepairAuthHelper.GetCurrentUserId();
 
-            UnassignedGrid.DataSource = db.Orders
+            UnassignedGrid.DataSource = db.Tickets
                 .Where(o => o.User == null)
                 .OrderBy(o => o.Id)
                 .ToList();
             UnassignedGrid.DataBind();
 
-            MyJobsGrid.DataSource = db.Orders
+            MyTicketsGrid.DataSource = db.Tickets
                 .Where(o => o.User != null && o.User.Id == employeeId)
                 .OrderBy(o => o.Id)
                 .ToList();
-            MyJobsGrid.DataBind();
+            MyTicketsGrid.DataBind();
         }
     }
 
@@ -46,17 +46,17 @@ public partial class EmployeeView : Page
             return;
         }
 
-        var orderId = Convert.ToInt32(e.CommandArgument);
+        var ticketId = Convert.ToInt32(e.CommandArgument);
         var employeeId = RepairAuthHelper.GetCurrentUserId();
 
         using (var db = new RepairShopContext())
         {
             var employee = db.Users.OfType<Employee>().FirstOrDefault(u => u.Id == employeeId);
-            var order = db.Orders.FirstOrDefault(o => o.Id == orderId);
+            var ticket = db.Tickets.FirstOrDefault(o => o.Id == ticketId);
 
-            if (employee != null && order != null && order.User == null)
+            if (employee != null && ticket != null && ticket.User == null)
             {
-                employee.TakeOrder(order);
+                employee.TakeTicket(ticket);
                 db.SaveChanges();
             }
         }
@@ -66,8 +66,8 @@ public partial class EmployeeView : Page
 
     protected void ConfirmComplete_Click(object sender, EventArgs e)
     {
-        int orderId;
-        if (!int.TryParse(CompleteOrderId.Value, out orderId))
+        int ticketId;
+        if (!int.TryParse(CompleteTicketId.Value, out ticketId))
         {
             return;
         }
@@ -78,17 +78,17 @@ public partial class EmployeeView : Page
         using (var db = new RepairShopContext())
         {
             var employee = db.Users.OfType<Employee>().FirstOrDefault(u => u.Id == employeeId);
-            var order = db.Orders.FirstOrDefault(o => o.Id == orderId && o.User != null && o.User.Id == employeeId);
+            var ticket = db.Tickets.FirstOrDefault(o => o.Id == ticketId && o.User != null && o.User.Id == employeeId);
 
-            if (employee != null && order != null)
+            if (employee != null && ticket != null)
             {
-                employee.CompleteOrder(order, comment);
+                employee.CompleteTicket(ticket, comment);
                 db.SaveChanges();
             }
         }
 
         ModalCommentBox.Text = string.Empty;
-        CompleteOrderId.Value = string.Empty;
+        CompleteTicketId.Value = string.Empty;
         BindGrids();
     }
 }
