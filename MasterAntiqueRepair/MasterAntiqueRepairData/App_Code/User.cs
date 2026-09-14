@@ -32,6 +32,28 @@ namespace MasterAntiqueRepair
         {
             return !string.IsNullOrEmpty(PasswordHash) && PasswordHasher.VerifyPassword(password, PasswordHash);
         }
+
+        public Comment AddComment(Ticket ticket, string text)
+        {
+            if (ticket.State != State.RepairState.COMPLETED)
+            {
+                throw new InvalidOperationException("Comments can only be added to completed tickets.");
+            }
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                throw new ArgumentException("Comment text is required.", nameof(text));
+            }
+
+            var comment = new Comment
+            {
+                User = this,
+                Ticket = ticket,
+                Text = text.Trim(),
+                CreatedAt = DateTime.Now
+            };
+            ticket.Comments.Add(comment);
+            return comment;
+        }
     }
         
 }

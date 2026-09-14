@@ -39,6 +39,61 @@ public partial class EmployeeView : Page
         }
     }
 
+    protected void MyTicketsGrid_RowDataBound(object sender, GridViewRowEventArgs e)
+    {
+        if (e.Row.RowType != DataControlRowType.DataRow)
+        {
+            return;
+        }
+
+        var ticket = (Ticket)e.Row.DataItem;
+
+        var employeeCommentsRepeater = (Repeater)e.Row.FindControl("EmployeeCommentsRepeater");
+        employeeCommentsRepeater.DataSource = ticket.Comments.Where(c => c.User is Employee).OrderBy(c => c.CreatedAt).ToList();
+        employeeCommentsRepeater.DataBind();
+
+        var customerCommentsRepeater = (Repeater)e.Row.FindControl("CustomerCommentsRepeater");
+        customerCommentsRepeater.DataSource = ticket.Comments.Where(c => c.User is Customer).OrderBy(c => c.CreatedAt).ToList();
+        customerCommentsRepeater.DataBind();
+    }
+
+    protected void PostComment_Click(object sender, EventArgs e)
+    {
+        int ticketId;
+        if (!int.TryParse(AddCommentTicketId.Value, out ticketId))
+        {
+            return;
+        }
+
+        var employeeId = RepairAuthHelper.GetCurrentUserId();
+
+        using (var db = new RepairShopContext())
+        {
+            var employee = db.Users.OfType<Employee>().FirstOrDefault(u => u.Id == employeeId);
+            var ticket = db.Tickets.FirstOrDefault(t => t.Id == ticketId && t.User != null && t.User.Id == employeeId);
+
+            if (employee != null && ticket != null)
+            {
+                try
+                {
+                    employee.AddComment(ticket, NewCommentText.Text);
+                    db.SaveChanges();
+                }
+                catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
+                {
+                    CommentErrorLabel.Text = ex.Message;
+                    CommentErrorLabel.Visible = true;
+                    return;
+                }
+            }
+        }
+
+        NewCommentText.Text = string.Empty;
+        AddCommentTicketId.Value = string.Empty;
+        CommentErrorLabel.Visible = false;
+        BindGrids();
+    }
+
     protected void UnassignedGrid_RowCommand(object sender, GridViewCommandEventArgs e)
     {
         if (e.CommandName != "Take")

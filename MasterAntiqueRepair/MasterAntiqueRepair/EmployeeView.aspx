@@ -20,14 +20,42 @@
     </asp:GridView>
 
     <h3>My Tickets</h3>
-    <asp:GridView runat="server" ID="MyTicketsGrid" AutoGenerateColumns="false" CssClass="table">
+    <asp:GridView runat="server" ID="MyTicketsGrid" AutoGenerateColumns="false" CssClass="table" OnRowDataBound="MyTicketsGrid_RowDataBound">
         <Columns>
             <asp:BoundField DataField="Id" HeaderText="Id" />
             <asp:BoundField DataField="Description" HeaderText="Description" />
             <asp:BoundField DataField="State" HeaderText="Status" />
             <asp:BoundField DataField="AssignedDate" HeaderText="Assigned" DataFormatString="{0:g}" />
             <asp:BoundField DataField="CompletedDate" HeaderText="Completed" DataFormatString="{0:g}" />
-            <asp:BoundField DataField="Comment" HeaderText="Comment" />
+            <asp:TemplateField HeaderText="Employee Comments">
+                <ItemTemplate>
+                    <%# Eval("Comment") %>
+                    <asp:Repeater runat="server" ID="EmployeeCommentsRepeater">
+                        <HeaderTemplate><ul></HeaderTemplate>
+                        <ItemTemplate>
+                            <li><%# Eval("Text") %> <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small></li>
+                        </ItemTemplate>
+                        <FooterTemplate></ul></FooterTemplate>
+                    </asp:Repeater>
+                    <asp:Panel runat="server" Visible='<%# (MasterAntiqueRepair.State.RepairState)Eval("State") == MasterAntiqueRepair.State.RepairState.COMPLETED %>'>
+                        <button type="button" class="btn btn-default btn-sm"
+                            onclick="openAddCommentModal('<%# Eval("Id") %>')">
+                            Add Comment
+                        </button>
+                    </asp:Panel>
+                </ItemTemplate>
+            </asp:TemplateField>
+            <asp:TemplateField HeaderText="Customer Comments">
+                <ItemTemplate>
+                    <asp:Repeater runat="server" ID="CustomerCommentsRepeater">
+                        <HeaderTemplate><ul></HeaderTemplate>
+                        <ItemTemplate>
+                            <li><%# Eval("Text") %> <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small></li>
+                        </ItemTemplate>
+                        <FooterTemplate></ul></FooterTemplate>
+                    </asp:Repeater>
+                </ItemTemplate>
+            </asp:TemplateField>
             <asp:TemplateField HeaderText="Complete">
                 <ItemTemplate>
                     <asp:Panel runat="server" Visible='<%# (MasterAntiqueRepair.State.RepairState)Eval("State") != MasterAntiqueRepair.State.RepairState.COMPLETED %>'>
@@ -53,7 +81,7 @@
                     <p id="completeModalDescription"></p>
                     <asp:HiddenField runat="server" ID="CompleteTicketId" />
                     <div class="form-group">
-                        <asp:Label runat="server" AssociatedControlID="ModalCommentBox">Comment</asp:Label>
+                        <asp:Label runat="server" AssociatedControlID="ModalCommentBox">Employee Comment</asp:Label>
                         <asp:TextBox runat="server" ID="ModalCommentBox" TextMode="MultiLine" Rows="3" CssClass="form-control" />
                     </div>
                 </div>
@@ -65,11 +93,39 @@
         </div>
     </div>
 
+    <div class="modal fade" id="addCommentModal" tabindex="-1" role="dialog" aria-labelledby="addCommentModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="addCommentModalLabel">Add Comment</h4>
+                </div>
+                <div class="modal-body">
+                    <asp:HiddenField runat="server" ID="AddCommentTicketId" />
+                    <asp:Label runat="server" ID="CommentErrorLabel" CssClass="text-danger" Visible="false" />
+                    <div class="form-group">
+                        <asp:Label runat="server" AssociatedControlID="NewCommentText">Comment</asp:Label>
+                        <asp:TextBox runat="server" ID="NewCommentText" TextMode="MultiLine" Rows="3" CssClass="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <asp:Button runat="server" ID="PostCommentButton" Text="Post Comment" OnClick="PostComment_Click" CssClass="btn btn-primary" />
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="text/javascript">
         function openCompleteModal(ticketId, description) {
             document.getElementById('<%= CompleteTicketId.ClientID %>').value = ticketId;
             document.getElementById('completeModalDescription').innerText = description;
             $('#completeModal').modal('show');
+        }
+
+        function openAddCommentModal(ticketId) {
+            document.getElementById('<%= AddCommentTicketId.ClientID %>').value = ticketId;
+            $('#addCommentModal').modal('show');
         }
     </script>
 </asp:Content>

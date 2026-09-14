@@ -17,6 +17,7 @@ namespace MasterAntiqueRepair
         public DateTime? SubmittedDate { get; set; }
         public DateTime? AssignedDate { get; set; }
         public DateTime? CompletedDate { get; set; }
+        public virtual ICollection<Comment> Comments { get; set; } = new List<Comment>();
 
         public static Ticket CreateSubmitted(string description, Customer customer)
         {
