@@ -1,0 +1,141 @@
+<%@ Page Title="Search" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeFile="TicketDetailView.aspx.cs" Inherits="TicketDetailView" %>
+
+<asp:Content runat="server" ID="BodyContent" ContentPlaceHolderID="MainContent">
+    <h2><%: Title %>.</h2>
+
+    <h3>Ticket Search</h3>
+    <div class="form-inline" style="margin-bottom: 15px;">
+        <div class="form-group">
+            <asp:Label runat="server" AssociatedControlID="TicketIdDropDown">Choose a ticket</asp:Label>
+            <asp:DropDownList runat="server" ID="TicketIdDropDown" AutoPostBack="true" OnSelectedIndexChanged="TicketIdDropDown_SelectedIndexChanged" CssClass="form-control" />
+        </div>
+        <div class="form-group" style="margin-left: 20px;">
+            <asp:Label runat="server" AssociatedControlID="TicketIdText">Or enter a Ticket Id</asp:Label>
+            <asp:TextBox runat="server" ID="TicketIdText" CssClass="form-control" />
+        </div>
+        <asp:Button runat="server" Text="Search" OnClick="Search_Click" CssClass="btn btn-default" />
+    </div>
+
+    <asp:Panel runat="server" ID="NotFoundPanel" Visible="false" CssClass="text-danger">
+        No ticket found with that Id.
+    </asp:Panel>
+
+    <asp:Panel runat="server" ID="TicketPanel" Visible="false">
+        <h3>Ticket #<asp:Literal runat="server" ID="TicketIdLiteral" Mode="Encode" /></h3>
+        <dl class="dl-horizontal">
+            <dt>Description</dt>
+            <dd><asp:Literal runat="server" ID="DescriptionLiteral" Mode="Encode" /></dd>
+            <dt>Status</dt>
+            <dd><asp:Literal runat="server" ID="StateLiteral" Mode="Encode" /></dd>
+            <dt>Customer</dt>
+            <dd><asp:Literal runat="server" ID="CustomerLiteral" /></dd>
+            <dt>Assigned To</dt>
+            <dd><asp:Literal runat="server" ID="AssignedToLiteral" /></dd>
+            <dt>Submitted</dt>
+            <dd><asp:Literal runat="server" ID="SubmittedLiteral" Mode="Encode" /></dd>
+            <dt>Assigned</dt>
+            <dd><asp:Literal runat="server" ID="AssignedLiteral" Mode="Encode" /></dd>
+            <dt>Completed</dt>
+            <dd><asp:Literal runat="server" ID="CompletedLiteral" Mode="Encode" /></dd>
+        </dl>
+
+        <h4>Employee Comments <asp:Literal runat="server" ID="EmployeeCommentsAuthorLiteral" /></h4>
+        <asp:Repeater runat="server" ID="EmployeeCommentsRepeater">
+            <HeaderTemplate><ul></HeaderTemplate>
+            <ItemTemplate>
+                <li><%#: Eval("Text") %> <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small></li>
+            </ItemTemplate>
+            <FooterTemplate></ul></FooterTemplate>
+            <SeparatorTemplate></SeparatorTemplate>
+        </asp:Repeater>
+        <asp:Label runat="server" ID="NoEmployeeCommentsLabel" Text="(none)" Visible="false" />
+
+        <h4>Customer Comments <asp:Literal runat="server" ID="CustomerCommentsAuthorLiteral" /></h4>
+        <asp:Repeater runat="server" ID="CustomerCommentsRepeater">
+            <HeaderTemplate><ul></HeaderTemplate>
+            <ItemTemplate>
+                <li><%#: Eval("Text") %> <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small></li>
+            </ItemTemplate>
+            <FooterTemplate></ul></FooterTemplate>
+        </asp:Repeater>
+        <asp:Label runat="server" ID="NoCustomerCommentsLabel" Text="(none)" Visible="false" />
+    </asp:Panel>
+
+    <hr />
+
+    <h3>Customer Search</h3>
+    <div class="form-inline" style="margin-bottom: 15px;">
+        <div class="form-group">
+            <asp:Label runat="server" AssociatedControlID="CustomerIdDropDown">Choose a customer</asp:Label>
+            <asp:DropDownList runat="server" ID="CustomerIdDropDown" AutoPostBack="true" OnSelectedIndexChanged="CustomerIdDropDown_SelectedIndexChanged" CssClass="form-control" />
+        </div>
+        <div class="form-group" style="margin-left: 20px;">
+            <asp:Label runat="server" AssociatedControlID="CustomerIdText">Or enter a Customer Id</asp:Label>
+            <asp:TextBox runat="server" ID="CustomerIdText" CssClass="form-control" />
+        </div>
+        <asp:Button runat="server" Text="Search" OnClick="CustomerSearch_Click" CssClass="btn btn-default" />
+    </div>
+
+    <asp:Panel runat="server" ID="CustomerNotFoundPanel" Visible="false" CssClass="text-danger">
+        No customer found with that Id.
+    </asp:Panel>
+
+    <asp:Panel runat="server" ID="CustomerPanel" Visible="false">
+        <h4>Customer #<asp:Literal runat="server" ID="CustomerIdLiteral" Mode="Encode" /></h4>
+        <dl class="dl-horizontal">
+            <dt>Name</dt>
+            <dd><asp:Literal runat="server" ID="CustomerNameLiteral" Mode="Encode" /></dd>
+            <dt>Created</dt>
+            <dd><asp:Literal runat="server" ID="CustomerCreatedLiteral" Mode="Encode" /></dd>
+        </dl>
+
+        <h5>Submitted Tickets</h5>
+        <asp:Repeater runat="server" ID="CustomerTicketsRepeater">
+            <HeaderTemplate><ul></HeaderTemplate>
+            <ItemTemplate>
+                <li><a href='<%# "TicketDetailView.aspx?id=" + Eval("Id") %>'>#<%# Eval("Id") %></a> - <%#: Eval("Description") %> (<%# Eval("State") %>)</li>
+            </ItemTemplate>
+            <FooterTemplate></ul></FooterTemplate>
+        </asp:Repeater>
+        <asp:Label runat="server" ID="NoCustomerTicketsLabel" Text="(none)" Visible="false" />
+    </asp:Panel>
+
+    <hr />
+
+    <h3>Employee Search</h3>
+    <div class="form-inline" style="margin-bottom: 15px;">
+        <div class="form-group">
+            <asp:Label runat="server" AssociatedControlID="EmployeeIdDropDown">Choose an employee</asp:Label>
+            <asp:DropDownList runat="server" ID="EmployeeIdDropDown" AutoPostBack="true" OnSelectedIndexChanged="EmployeeIdDropDown_SelectedIndexChanged" CssClass="form-control" />
+        </div>
+        <div class="form-group" style="margin-left: 20px;">
+            <asp:Label runat="server" AssociatedControlID="EmployeeIdText">Or enter an Employee Id</asp:Label>
+            <asp:TextBox runat="server" ID="EmployeeIdText" CssClass="form-control" />
+        </div>
+        <asp:Button runat="server" Text="Search" OnClick="EmployeeSearch_Click" CssClass="btn btn-default" />
+    </div>
+
+    <asp:Panel runat="server" ID="EmployeeNotFoundPanel" Visible="false" CssClass="text-danger">
+        No employee found with that Id.
+    </asp:Panel>
+
+    <asp:Panel runat="server" ID="EmployeePanel" Visible="false">
+        <h4>Employee #<asp:Literal runat="server" ID="EmployeeIdLiteral" Mode="Encode" /></h4>
+        <dl class="dl-horizontal">
+            <dt>Name</dt>
+            <dd><asp:Literal runat="server" ID="EmployeeNameLiteral" Mode="Encode" /></dd>
+            <dt>Created</dt>
+            <dd><asp:Literal runat="server" ID="EmployeeCreatedLiteral" Mode="Encode" /></dd>
+        </dl>
+
+        <h5>Assigned Tickets</h5>
+        <asp:Repeater runat="server" ID="EmployeeTicketsRepeater">
+            <HeaderTemplate><ul></HeaderTemplate>
+            <ItemTemplate>
+                <li><a href='<%# "TicketDetailView.aspx?id=" + Eval("Id") %>'>#<%# Eval("Id") %></a> - <%#: Eval("Description") %> (<%# Eval("State") %>)</li>
+            </ItemTemplate>
+            <FooterTemplate></ul></FooterTemplate>
+        </asp:Repeater>
+        <asp:Label runat="server" ID="NoEmployeeTicketsLabel" Text="(none)" Visible="false" />
+    </asp:Panel>
+</asp:Content>

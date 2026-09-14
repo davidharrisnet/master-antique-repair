@@ -70,7 +70,10 @@ public partial class CustomerView : Page
             {
                 try
                 {
-                    customer.AddComment(ticket, NewCommentText.Text);
+                    var addedComment = customer.AddComment(ticket, NewCommentText.Text);
+                    db.SaveChanges();
+
+                    AuditLogger.Log(db, customer, AuditLog.ActionType.AddComment, AuditLog.EntityKind.Comment, addedComment.Id);
                     db.SaveChanges();
                 }
                 catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
@@ -108,6 +111,7 @@ public partial class CustomerView : Page
                 try
                 {
                     customer.DeleteComment(comment);
+                    AuditLogger.Log(db, customer, AuditLog.ActionType.DeleteComment, AuditLog.EntityKind.Comment, comment.Id);
                     db.Comments.Remove(comment);
                     db.SaveChanges();
                 }
@@ -141,6 +145,7 @@ public partial class CustomerView : Page
                 try
                 {
                     customer.EditComment(comment, EditCommentText.Text);
+                    AuditLogger.Log(db, customer, AuditLog.ActionType.EditComment, AuditLog.EntityKind.Comment, comment.Id);
                     db.SaveChanges();
                 }
                 catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)

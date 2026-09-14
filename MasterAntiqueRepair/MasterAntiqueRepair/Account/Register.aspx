@@ -6,7 +6,7 @@
         <asp:Literal runat="server" ID="ErrorMessage" />
     </p>
     <p class="text-success">
-        <asp:Literal runat="server" ID="SuccessMessage" />
+        <asp:Literal runat="server" ID="SuccessMessage" Mode="Encode" />
     </p>
 
     <div class="form-horizontal">

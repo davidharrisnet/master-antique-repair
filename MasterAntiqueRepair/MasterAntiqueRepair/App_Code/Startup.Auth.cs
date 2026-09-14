@@ -15,7 +15,12 @@ namespace MasterAntiqueRepair
             app.UseCookieAuthentication(new CookieAuthenticationOptions
             {
                 AuthenticationType = DefaultAuthenticationTypes.ApplicationCookie,
-                LoginPath = new PathString("/Account/Login")
+                LoginPath = new PathString("/Account/Login"),
+                CookieHttpOnly = true,
+                // SameAsRequest (not Always) so the cookie still works over the plain-HTTP
+                // IIS Express dev setup this project documents - it upgrades to Secure-only
+                // automatically once the site is actually served over HTTPS.
+                CookieSecure = CookieSecureOption.SameAsRequest
             });
         }
     }

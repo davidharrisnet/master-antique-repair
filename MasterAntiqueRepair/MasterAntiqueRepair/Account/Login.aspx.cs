@@ -23,8 +23,22 @@ public partial class Account_Login : Page
                 using (var db = new RepairShopContext())
                 {
                     var user = db.Users.FirstOrDefault(u => u.Name == UserName.Text);
+
+                    if (user != null && user.IsLockedOut())
+                    {
+                        FailureText.Text = "This account is temporarily locked due to repeated failed login attempts. Please try again later.";
+                        ErrorMessage.Visible = true;
+                        return;
+                    }
+
                     if (user != null && user.VerifyPassword(Password.Text))
                     {
+                        user.RecordSuccessfulLogin();
+                        db.SaveChanges();
+
+                        AuditLogger.Log(db, user, AuditLog.ActionType.Login, AuditLog.EntityKind.User, user.Id);
+                        db.SaveChanges();
+
                         RepairAuthHelper.SignIn(user, isPersistent: false);
 
                         var returnUrl = Request.QueryString["ReturnUrl"];
@@ -51,6 +65,12 @@ public partial class Account_Login : Page
                     }
                     else
                     {
+                        if (user != null)
+                        {
+                            user.RecordFailedLogin();
+                            db.SaveChanges();
+                        }
+
                         FailureText.Text = "Invalid username or password.";
                         ErrorMessage.Visible = true;
                     }

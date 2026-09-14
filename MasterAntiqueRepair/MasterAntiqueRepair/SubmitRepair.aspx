@@ -7,6 +7,9 @@
         <h4>Tell us about the item you'd like repaired.</h4>
         <hr />
         <asp:ValidationSummary runat="server" CssClass="text-danger" />
+        <p class="text-danger">
+            <asp:Literal runat="server" ID="ErrorMessage" Visible="false" Mode="Encode" />
+        </p>
         <div class="form-group">
             <asp:Label runat="server" AssociatedControlID="Description" CssClass="col-md-2 control-label">Description</asp:Label>
             <div class="col-md-10">

@@ -1,11 +1,20 @@
 using System;
 using System.Linq;
 using System.Text;
+using System.Web;
+using MasterAntiqueRepair;
 
 public partial class TestEF : System.Web.UI.Page
 {
     protected void Page_Load(object sender, EventArgs e)
     {
+        // Scratch/disconnected page (see README "Known limitations") - it reseeds the
+        // TestConnection database on every load, so it must not be reachable anonymously.
+        if (!RepairAuthHelper.RequireRole(Response, "Manager"))
+        {
+            return;
+        }
+
         using (var db = new MasterAntiqueRepair.TestDbContext())
         {
             // 1) Customers submit new Tickets
@@ -58,9 +67,12 @@ public partial class TestEF : System.Web.UI.Page
                 summary.Append("; ");
             }
 
-            ResultLabel.Text = "Tickets: " + db.Tickets.Count();
-            UserLabel.Text = "Users: " + db.Users.Count();
-            UserName.Text = summary.ToString();
+            // asp:Label doesn't HTML-encode its Text - encode explicitly since this
+            // concatenates entity data (defensive; today's seed data here is hardcoded,
+            // but this page has no business logic reason to ever trust that staying true).
+            ResultLabel.Text = HttpUtility.HtmlEncode("Tickets: " + db.Tickets.Count());
+            UserLabel.Text = HttpUtility.HtmlEncode("Users: " + db.Users.Count());
+            UserName.Text = HttpUtility.HtmlEncode(summary.ToString());
         }
     }
 }

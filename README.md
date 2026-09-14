@@ -7,52 +7,19 @@ A repair-shop tracking application: customers submit repair requests for antique
 **PHASE 1 — Legacy Build**
 Stack: ASP.NET Framework 4.7.2, C#, WebForms, SQL Server
 
-Functional requirements:
+MasterAntiqueRepair tracks antique-repair work end to end: a customer describes an item and submits it as a **ticket**; an employee picks it up, works it, and marks it complete; a manager oversees everyone's workload. Every ticket carries a status (`SUBMITTED` → `INPROGRESS` → `COMPLETED`) and a running, dated **comment thread** either side can add to once the work is done — a lightweight back-and-forth for "here's what we found" / "thanks, looks good" without a full messaging system. A manager-only **Audit Log** records who did what (created a ticket, logged in, assigned/completed a job, added/edited/deleted a comment) without ever storing the comment or ticket text itself — just enough to answer "who did this, to what, and when," not "what did they write."
 
-1.	A single core domain with 3–4 related entities (e.g., a simple case/request tracking app: Requests → Assignees → Status History)
+Login credentials for the pre-seeded accounts (see [Seeding initial accounts](#seeding-initial-accounts) for how these get created):
 
-**User Roles**<span id="roles">
+|Name|Password|Role|
+|---|---|---|
+|manager|ManagerPass123!|Manager|
+|employee1|EmployeePass123!|Employee|
+|employee2|EmployeePass456!|Employee|
 
-MasterAntiqueRepair has manager, employee, and customer roles.
-   * **customer**: creates repair tickets with a description with an initial state of SUBMITTED
-   * **employee**: The employee home pages presents a list of submitted jobs, and can assign themself to the ticket. The employee then owns the ticket, and the ticket is in the INPROGRESS state. Employees can mark inprogress tickets to COMPLETE.
-   * **manager**: Views the list of employees and their assigned items and a list of customers with there tickets.
+There's no seeded customer account — sign up as one via `/Account/CustomerSignUp`.
 
-2.	Basic CRUD for each entity
-  * Create, and Read
-  * TODO: Update, Delete
-  
-3.	One approval/status-transition workflow with at least 3 states (e.g., Submitted → InProgress → Complete)
-4.	A simple login/role check (hardcoded roles are fine)
-    * manager, employee have preassigned credentials
-    * customers may be created via "Sign up"
-
-|Name|Password|
-|---|---|
-|manager|ManagerPass123!|
-|employee1|EmployeePass123!|
-|employee2|EmployeePass456!|
-|customer1|CustomerPass123!|
-|customer2|CustomerPass123!|
-
-5.	One list/search view with filtering and pagination
-
-* list: mangers see a list of employee tickets and customer unasigned tickets.
-* TODO: searching
-
-Non-functional requirements:
-
-6.	Layered architecture (UI / business logic / data access clearly separated — no logic in code-behind)*	Server-side input validation
-* user logins are validated.
-* TODO: other elments of input validation.
-7.	Logging of workflow state changes (this becomes your audit trail in Phase 2)
-* TODO: Loggging
-8.	A short README explaining the structure and how to run it
-* [Overview](#roles)
-
-
-
-MasterAntiqueRepair provides the necessary functionality for 
+See [User roles and actions](#user-roles-and-actions) below for what each role can actually do, and [Project goals](#project-goals) for how this maps back to the original Phase 1 spec.
 
 ## Getting the code
 
@@ -195,22 +162,91 @@ Then log in at `/Account/Login` (F5 in Visual Studio to actually run the site) a
 
 Entities live in `MasterAntiqueRepairData/App_Code/` (see [MasterAntiqueRepairData](#masterantiquerepairdata) below).
 
-- **`User`** — base type: `Id`, `Name`, `CreatedAt`, `PasswordHash`, `Orders` (collection). Mapped via Table-Per-Hierarchy — one `Users` table, with a `Discriminator` column identifying the concrete type.
-  - **`Customer : User`** — submits repair requests.
-  - **`Employee : User`** — picks up and completes repair requests. `TakeOrder(Order)` assigns an order to itself; `CompleteOrder(Order, comment)` marks one done with a comment.
-  - **`Manager : User`** — oversees employees, customers, and jobs. `GetEmployeesWithOrders(db)` returns all employees with their assigned orders; `GetCustomersWithOrders(db)` returns all customers with the orders they submitted.
-- **`Order`** — a repair request: `Id`, `Description`, `Comment`, `State` (see below), `Customer` (who submitted it), `User` (the employee it's assigned to, nullable until picked up), `SubmittedDate`, `AssignedDate`, `CompletedDate`.
+- **`User`** — base type: `Id`, `Name`, `CreatedAt`, `PasswordHash`, `FailedLoginAttempts`, `LockedOutUntil`, `Tickets` (collection). Mapped via Table-Per-Hierarchy — one `Users` table, with a `Discriminator` column identifying the concrete type. `AddComment`/`EditComment`/`DeleteComment` (shared by every role — see [Comments](#comments) below) and the login-lockout helpers (`IsLockedOut`/`RecordFailedLogin`/`RecordSuccessfulLogin` — see [Security](#security)) live here since the rules are identical regardless of role.
+  - **`Customer : User`** — submits repair requests (`submit(Ticket)`).
+  - **`Employee : User`** — picks up and completes repair requests. `TakeTicket(Ticket)` assigns a ticket to itself; `CompleteTicket(Ticket, comment)` marks one done and (if a comment was entered) posts it as the first entry in that ticket's comment thread.
+  - **`Manager : User`** — oversees employees, customers, and jobs; also the only role with access to the Audit Log and Ticket Search tools (see [Manager tools](#manager-tools)). `GetEmployeesWithTickets(db)` returns all employees with their assigned tickets; `GetCustomersWithTickets(db)` returns all customers with the tickets they submitted.
+- **`Ticket`** — a repair request: `Id`, `Description`, `State` (see below), `Customer` (who submitted it), `User` (the employee it's assigned to, nullable until picked up), `SubmittedDate`, `AssignedDate`, `CompletedDate`, `Comments` (collection — see below).
+- **`Comment`** — one dated entry in a ticket's comment thread: `Id`, `UserId`/`User` (the author — customer or employee), `TicketId`/`Ticket`, `Text`, `CreatedAt`. See [Comments](#comments) for who can add/edit/delete what.
+- **`AuditLog`** — one row per tracked action: `Id`, `Timestamp`, `UserId`/`User` (who did it), `Action` (`AuditLog.ActionType` enum — `CreateUser`, `Login`, `CreateTicket`, `AssignTicket`, `CompleteTicket`, `AddComment`, `EditComment`, `DeleteComment`), `EntityType` (`AuditLog.EntityKind` enum — `User`, `Ticket`, `Comment`), `EntityId`. Deliberately stores only the id of the thing acted on, never comment or ticket text — see [Security](#security).
 - **`State.RepairState`** (enum) — `SUBMITTED` → `INPROGRESS` → `COMPLETED`.
 
-## Application flow
+## User roles and actions
 
-**Customers** sign up at `/Account/CustomerSignUp`, then log in at `/Account/Login`. Logging in lands on `/CustomerView` ("My Repairs") — a list of their own requests with status and submitted date, plus a link to `/SubmitRepair`, a simple description form. Submitting creates an `Order` in `SUBMITTED` state tied to that customer.
+There are three roles — Customer, Employee, Manager — each landing on its own page after login, and each restricted server-side (`RepairAuthHelper.RequireRole`) to only the pages/actions listed below, regardless of what the UI shows.
 
-**Employees** can only be created by a Manager, via `/Account/Register`. Logging in lands on `/EmployeeView`, showing two lists: unassigned jobs (each with an "Assign to Me" button) and the employee's own jobs. Each of the employee's own jobs has a "Mark Complete" button that opens a modal for entering a completion comment.
+### Customer
 
-**Managers** log in and land on `/ManagerView`, showing (in order): every employee with their assigned jobs, a list of unassigned jobs (each with the submitting customer's name), and every customer with the orders they've submitted and each order's status. Only a Manager sees the "Register" link in the nav (to create Employee accounts).
+- **Sign up** at `/Account/CustomerSignUp` (self-service — the only role that is). **Log in** at `/Account/Login`; lands on `/CustomerView` ("My Repairs").
+- **Submit a repair request**: `/SubmitRepair` — a description form. Creates a `Ticket` in `SUBMITTED` state tied to that customer.
+- **View their own tickets**: `/CustomerView` lists every ticket they've submitted, with status, submitted date, the employee's comment thread, and their own comment thread (see [Comments](#comments)).
+- **Add / edit / delete their own comments** on their own tickets, once a ticket reaches `COMPLETED` — see [Comments](#comments) for the exact rules.
+- Cannot: see other customers' tickets, act on any employee/manager page, or comment on a ticket that isn't theirs or isn't yet completed.
 
-There is currently no UI path to create a Manager account — one must be inserted directly into the database (see [Known limitations](#known-limitations)).
+### Employee
+
+- Cannot self-register — created only by a Manager via `/Account/Register`. **Log in** at `/Account/Login`; lands on `/EmployeeView`.
+- **View unassigned tickets**: a list of every `SUBMITTED` ticket with no employee yet, each with an "Assign to Me" button.
+- **Assign to Me**: takes an unassigned ticket — moves it to `INPROGRESS`, records `AssignedDate`, and assigns it to that employee (`Employee.TakeTicket`).
+- **View "My Tickets"**: every ticket currently or previously assigned to them, each with a "Mark Complete" button (visible while not yet `COMPLETED`).
+- **Mark Complete**: moves a ticket they own to `COMPLETED`, records `CompletedDate`, and — if a comment was typed into the modal — posts it as the first entry in that ticket's Employee Comments thread (`Employee.CompleteTicket`).
+- **Add / edit / delete their own comments** on tickets assigned to them, once `COMPLETED` — see [Comments](#comments).
+- Cannot: take/complete a ticket assigned to a different employee, or act on tickets they were never assigned.
+
+### Manager
+
+- Has standing credentials seeded by `Scripts/Seed-InitialUsers.ps1` (see [Overview](#overview)) — there is currently no UI path to create a Manager account; one must be inserted directly into the database (see [Known limitations](#known-limitations)).
+- **Log in** at `/Account/Login`; lands on `/ManagerView`, showing (in order): every employee with their assigned tickets, every unassigned ticket (with the submitting customer's name), and every customer with the tickets they've submitted and each one's status.
+- **Register a new Employee account**: `/Account/Register` — only a Manager sees this link in the nav.
+- **View the Audit Log**: `/AuditLogView` — see [Manager tools](#manager-tools).
+- **Search for a ticket** by Id and see its full comment thread: `/TicketDetailView` — see [Manager tools](#manager-tools).
+- Managers do not add, edit, or delete comments themselves — the comment feature is Customer/Employee only; a Manager's view of a ticket's comments (via Ticket Search) is read-only.
+
+## Comments
+
+Once a ticket reaches `COMPLETED`, both the customer who submitted it and the employee who completed it can leave a running, dated comment thread on it — separate threads per side ("Employee Comments" and "Comments"/"Customer Comments" columns on `EmployeeView`/`CustomerView`/`TicketDetailView`), each rendered as a bulleted list (one `<li>` per `Comment` row, sorted oldest-first by `CreatedAt`). A Manager can see both threads (read-only) for any ticket via [Ticket Search](#manager-tools), but never adds to them.
+
+The underlying entity is `Comment` (see [Domain model](#domain-model)) — this is a real one-to-many table, not a single string field, so multiple comments accumulate over time instead of overwriting each other. (An earlier design used a single `Ticket.Comment` string set once at completion time; it was removed in favor of this entity once the "let either side add more comments later" requirement came up — nothing in the current schema still has it.)
+
+### Adding a comment
+
+- UI: an "Add Comment" button (visible only once the ticket is `COMPLETED`) opens a modal with a text box; submitting it posts back to `PostComment_Click` in the relevant view's code-behind.
+- Domain: `User.AddComment(Ticket, text)` — shared by `Customer` and `Employee` since the rule is identical for both: throws `InvalidOperationException` unless `ticket.State == COMPLETED`, and validates the text via `ValidateCommentText` (required, ≤2000 characters, no embedded control characters — see [Security](#security)).
+- The employee's first comment on a ticket, entered via the "Mark Complete" modal, goes through this exact same path (`Employee.CompleteTicket` calls `AddComment` internally after moving the ticket to `COMPLETED`) — there's no separate mechanism for "the completion note" vs. "a later comment."
+
+### Editing a comment
+
+- UI: an "Edit" link next to each comment in your own thread opens a modal pre-filled with the current text; saving posts back to `SaveEditComment_Click`.
+- Domain: `User.EditComment(Comment, newText)` — throws `InvalidOperationException` unless `comment.UserId == Id` (you can only edit your own comment, checked server-side regardless of what the UI shows), then re-validates the new text the same way as adding.
+- You can only edit a comment on a ticket you have access to in the first place (a customer's own submitted tickets, or an employee's own assigned tickets) — the surrounding query in code-behind scopes which comments are even reachable before the ownership check ever runs.
+
+### Deleting a comment
+
+- UI: a "Delete" link next to each comment in your own thread, guarded by a plain JS `confirm('Are you sure?')` before the postback fires.
+- Domain: `User.DeleteComment(Comment)` — same ownership check as editing (`comment.UserId == Id`); the actual row removal (`db.Comments.Remove(comment)`) happens in code-behind after that check passes.
+- The `confirm()` dialog is a UX safety net against an accidental click, not a security boundary — see [Security](#security) for why that distinction matters and what actually enforces the ownership rule.
+
+## Manager tools
+
+Two Manager-only pages exist purely for oversight — neither one is part of the customer/employee workflow, and neither lets a Manager add, edit, or delete anything on a ticket.
+
+### Audit Log (`/AuditLogView`)
+
+Lists every tracked `AuditLog` row — Timestamp, User (who did it), Action, Entity type, Entity Id — newest first. See [Domain model](#domain-model) for exactly which actions are tracked and why comment/ticket text is never one of the columns.
+
+### Pagination
+
+A "Rows per page" dropdown (10 or 20) sits above the grid; changing it re-binds the grid at the new page size and resets to page 1 (`PageSizeList_SelectedIndexChanged`). The grid itself uses standard `GridView` paging (`AllowPaging`, `OnPageIndexChanging`) with `PagerSettings Mode="NumericFirstLast"` — First / numbered pages / Last controls — so you can jump around a large log rather than only stepping one page at a time.
+
+### Search function
+
+An "Entity Id" box above the grid filters the log to rows matching that id (`AuditLogGrid`'s data source becomes `db.AuditLogs.Where(a => a.EntityId == id)`). Since a log row only stores an id and a type, each row also has a **View** link that resolves to the actual thing that was acted on:
+
+- `EntityType == Ticket` → links straight to `/TicketDetailView.aspx?id={EntityId}`.
+- `EntityType == Comment` → looks up that comment's `TicketId` and links to the same ticket-detail page (a bare comment id isn't meaningful without the ticket it belongs to).
+- `EntityType == User` → no link — there's no separate "user detail" page.
+
+`/TicketDetailView` is also reachable directly (it's in the nav as "Ticket Search," independent of the Audit Log) — enter a Ticket Id and see that ticket's fields (Description, Status, Customer, Assigned To, Submitted/Assigned/Completed dates) plus both of its comment threads, read-only, in the same bulleted format used on `EmployeeView`/`CustomerView`. This is what makes "Entity 7 is a `CreateTicket`" concretely actionable — click through and you're looking at ticket #7 itself, comments included, not just a log line referencing it.
 
 ## Authentication
 
@@ -229,13 +265,13 @@ Its classes are namespaced `MasterAntiqueRepair` (matching the website), not `Ma
 
 ### `RepairShopContext`
 
-The application's real `DbContext` — `DbSet<User> Users`, `DbSet<Order> Orders`. Uses the `"DefaultConnection"` connection string (the same LocalDB database the website's `App_Data` folder holds). Under EF6 Migrations, with its own configuration in `Migrations/RepairShop/`.
+The application's real `DbContext` — `DbSet<User> Users`, `DbSet<Ticket> Tickets`, `DbSet<Comment> Comments`, `DbSet<AuditLog> AuditLogs`. Uses the `"DefaultConnection"` connection string (the same LocalDB database the website's `App_Data` folder holds). Under EF6 Migrations, with its own configuration in `Migrations/RepairShop/`.
 
-Because a Migrations configuration exists for it, EF6 automatically uses `MigrateDatabaseToLatestVersion` as its initializer — not the plain `CreateDatabaseIfNotExists` default. In practice this means the very first request that touches `RepairShopContext` against a database with no `__MigrationHistory` row for this context runs every migration under `Migrations/RepairShop/` in order, starting with `InitialCreate` — which is what actually builds `dbo.Users`/`dbo.Orders` from nothing. There's no separate "create schema" step; hitting the site (or running any of the `Scripts/*.ps1` seed/reset flows) is what triggers it.
+Because a Migrations configuration exists for it, EF6 automatically uses `MigrateDatabaseToLatestVersion` as its initializer — not the plain `CreateDatabaseIfNotExists` default. In practice this means the very first request that touches `RepairShopContext` against a database with no `__MigrationHistory` row for this context runs every migration under `Migrations/RepairShop/` in order, starting with `InitialCreate` — which is what actually builds `dbo.Users`/`dbo.Tickets` from nothing (later migrations under the same folder add `dbo.Comments`, `dbo.AuditLogs`, and the various renames/column changes described in [Security](#security)). There's no separate "create schema" step; hitting the site (or running any of the `Scripts/*.ps1` seed/reset flows) is what triggers it.
 
 ### `TestDbContext`
 
-A separate, scratch `DbContext` (`TestItem`, `User`, `Order` `DbSet`s) using its own `"TestConnection"` connection string and its own database. Exercised by the website's `TestEF.aspx` — a disconnected scratch page, not part of the main application flow. Under its own EF6 Migrations configuration in `Migrations/` (the default location).
+A separate, scratch `DbContext` (`TestItem`, `User`, `Ticket` `DbSet`s) using its own `"TestConnection"` connection string and its own database. Exercised by the website's `TestEF.aspx` — a disconnected scratch page, not part of the main application flow, now gated to the `Manager` role (see [Security](#security)). Under its own EF6 Migrations configuration in `Migrations/` (the default location).
 
 ### Running migrations
 
@@ -309,19 +345,94 @@ It targets the live app database by default; pass `-Database "MasterAntiqueRepai
 
 The detach must happen before the files are deleted, not after — deleting the files first leaves a stale LocalDB catalog entry, and the next attach fails with `Cannot attach the file ... as database ...`. The script handles this ordering; if you're ever doing it by hand in SSMS, detach first.
 
+## Security
+
+This app went through an explicit security review pass during development. This section documents what was found, what was fixed, how, and what was deliberately left as an accepted risk (with the reasoning), so the "why" isn't lost.
+
+### Cross-site scripting (XSS)
+
+**The problem**: several pages rendered user-supplied text (comment text, ticket descriptions, account names) via WebForms data-binding expressions like `<%# Eval("Text") %>` or via `asp:Literal`/`asp:Label` controls set from code-behind — neither of which HTML-encodes by default. A ticket description or comment containing `<script>...</script>` would be written into the page's HTML verbatim and executed by the browser of *anyone* who viewed it (an employee, a manager, another customer) — a classic **stored XSS** vulnerability, not limited to whoever submitted the payload.
+
+**The fix — encode on output, not input**: the correct defense is encoding untrusted data at the point it's written into HTML, not trying to blacklist "dangerous" input (which is trivially bypassed — case variants, encoded payloads, non-`<script>` vectors like `<img onerror=...>`, etc.). Concretely:
+- Data-binding expressions changed from `<%# %>` to the encoding form `<%#: %>` (e.g. `<%#: Eval("Text") %>`) everywhere a bound value could contain attacker-controlled text — comment text and author names across `CustomerView.aspx`, `EmployeeView.aspx`, `ManagerView.aspx`, and `TicketDetailView.aspx`.
+- `asp:Literal` controls set from code-behind got `Mode="Encode"` (`TicketDetailView.aspx`'s ticket-field literals, `Register.aspx`'s `SuccessMessage`, `SubmitRepair.aspx`'s `ErrorMessage`).
+- `TestEF.aspx.cs` (see [Known limitations](#known-limitations)) wraps its `asp:Label` assignments in `HttpUtility.HtmlEncode(...)` — defensive, since today's values there are hardcoded literals, not actual user input, but the pattern itself was unsafe.
+- Fields that are never rendered as HTML at all (JS string arguments like the "Mark Complete" modal's description) already went through `HttpUtility.JavaScriptStringEncode` for that context, and setting them via `.innerText` (not `.innerHTML`) client-side avoids re-introducing the same class of bug there.
+
+**What this doesn't protect against**: nothing here — output encoding is a complete fix for this specific bug once applied everywhere untrusted data is written into HTML. The residual risk is only "did we miss a spot," which is why this was swept across every view, not just the one first reported.
+
+### Oversized input / resource exhaustion
+
+**The problem**: `Comment.Text` and `Ticket.Description` were unbounded `string` properties with no length limit anywhere — client, server, or database (`nvarchar(max)`). Nothing stopped a customer or employee from submitting megabytes of text per comment or ticket, bloating storage and slowing down every page that lists them.
+
+**The fix**: both fields now enforce a 2000-character cap, and reject embedded control characters (other than `\n`/`\r`/`\t`, which are legitimate in free text) that can behave oddly in storage/rendering:
+- `User.ValidateCommentText` (shared by `AddComment`/`EditComment`) and `Ticket.CreateSubmitted` both throw a clear `ArgumentException` before anything touches the database.
+- `[MaxLength(2000)]` on `Comment.Text` and `Ticket.Description` bounds the actual database column, so the limit holds even if some future code path bypasses the domain method.
+- Client-side `TextBox.MaxLength` was **not** used for the comment/description boxes — they're `TextMode="MultiLine"` (`<textarea>`), and WebForms' `TextBox.MaxLength` is silently ignored for multi-line boxes (it only renders the HTML `maxlength` attribute for single-line/password boxes). The server-side check is what actually matters; a JS-only client cap would need custom script and wasn't worth the complexity for a soft UX nicety.
+
+### SQL injection
+
+Not a live risk in this codebase: every data access goes through EF6/LINQ-to-Entities (`db.Tickets.Where(...)`, `db.Comments.FirstOrDefault(...)`, etc.), which parameterizes values automatically. There is no raw `SqlCommand`/`ExecuteSqlCommand` string-concatenation anywhere in the app. The only thing that would introduce this risk is adding raw SQL built from string concatenation in the future — there's nothing to "harden" today, only a discipline to keep (always use LINQ/parameters, never concatenate user input into a SQL string).
+
+### Authorization / IDOR (Insecure Direct Object Reference)
+
+Every mutating action re-validates ownership **server-side**, independent of what the UI shows or what the client sends:
+- `User.EditComment`/`DeleteComment` throw `InvalidOperationException` unless `comment.UserId == Id` — a user can only ever edit or delete their own comments, even if they somehow submit another comment's id.
+- Ticket queries in code-behind are always scoped to the acting user: `EmployeeView`'s complete/comment actions filter by `t.User.Id == employeeId`; `CustomerView`'s filter by `t.Customer.Id == customerId`. An employee can't complete a ticket assigned to someone else by guessing its id, and a customer can't comment on someone else's ticket the same way.
+- Every page gates on role via `RepairAuthHelper.RequireRole` as the first statement in `Page_Load`, before any data access — `Manager`-only pages (`ManagerView`, `AuditLogView`, `TicketDetailView`, `Account/Register`, and now `TestEF`) reject anyone else.
+
+### Cross-Site Request Forgery (CSRF) vs. XSS — and why `confirm()` isn't a security control
+
+`Site.master.cs` carries the VS template's anti-XSRF protection: a random token tied to a cookie and the current username, stored in `ViewStateUserKey`, and re-validated on every postback. This protects against a **different-origin** attack — some other website tricking a logged-in user's browser into submitting a form to this app.
+
+It does **not** protect against a script already running on this app's own pages (XSS). If a stored-XSS payload existed (see above), a script running in that context could trigger the same postback a real click would — either by calling the rendered link's `.click()`, or by calling `__doPostBack(...)` directly — and it could defeat the "Are you sure?" `confirm()` dialog on the Delete buttons just by overriding `window.confirm` first, since that's an ordinary same-origin JS global, not a browser-enforced boundary. The `confirm()` prompt is a UX safety net against an accidental real click; it is not, and was never intended to be, a defense against a script that's already executing on the page. The actual defenses against that scenario are (1) not letting attacker-controlled text become executable markup in the first place (the XSS fixes above) and (2) the server-side ownership checks in the previous section, which limit the blast radius to the acting user's own data even in a worst-case compromised-session scenario.
+
+### Open redirect
+
+`IdentityHelper.RedirectToReturnUrl` (`App_Code/IdentityModels.cs`) only honors a `ReturnUrl` query-string value if `IsLocalUrl` confirms it's a same-site relative path (starts with `/` but not `//` or `/\`, or `~/`); anything else — `https://evil.example/phish`, `//evil.example`, etc. — falls back to `~/`. This prevents the login flow from being used to redirect users to an attacker-controlled site after a legitimate-looking login on this domain.
+
+### Authentication
+
+- **Password hashing** (`PasswordHasher.cs`): PBKDF2 (`Rfc2898DeriveBytes`) with a random 16-byte salt per password. The iteration count is now embedded in every newly-created hash (`"{iterations}.{salt}.{hash}"`), raised from 10,000 to 100,000. Embedding it means it can be raised again later without invalidating existing passwords — the previous design used a single hardcoded constant for both hashing and verifying, so bumping it would have silently locked every existing account (including the seeded demo accounts) out. Hashes created before this change (a bare base64 blob with no `.` separators) still verify correctly via a legacy fallback path at the old fixed 10,000 iterations — nothing already stored breaks. `Scripts/Seed-InitialUsers.ps1` still produces the old-format hash (it has its own PowerShell reimplementation of the same algorithm at 10,000 iterations) — this still logs in fine via the legacy path; it just won't benefit from the higher iteration count unless that script is updated too, or the seeded account's password is changed through the app.
+- **Constant-time comparison**: the byte-by-byte hash comparison now always inspects every byte rather than returning on the first mismatch, closing a (minor, hard-to-exploit-remotely, but free-to-fix) timing side channel.
+- **Password policy** (`User.SetPassword`): minimum length raised from 6 to 8 characters; a 128-character maximum was added (defense against feeding pathologically long input into the hashing step). No forced complexity rules (uppercase/digit/symbol) — current guidance (NIST SP 800-63B) favors length over composition rules, which tend to produce predictable patterns instead of real entropy.
+- **Login lockout** (`User.RecordFailedLogin`/`RecordSuccessfulLogin`/`IsLockedOut`, wired into `Account/Login.aspx.cs`): 5 consecutive failed attempts against an account locks it for 15 minutes; a successful login resets the counter. This is **per-account**, not per-IP — see accepted risks below for what that does and doesn't cover.
+- **Auth cookie** (`App_Code/Startup.Auth.cs`): explicit `CookieHttpOnly = true` and `CookieSecure = CookieSecureOption.SameAsRequest`. `SameAsRequest` (rather than `Always`) is deliberate — this project's documented dev workflow is plain HTTP via IIS Express, and `Always` would silently stop the auth cookie from ever being sent back to the browser under HTTP, breaking login for every contributor following the README as written. It upgrades to HTTPS-only automatically the moment this is actually served over HTTPS.
+
+### Audit logging and comment content
+
+`AuditLog` (see the main architecture section) deliberately never stores comment text or ticket descriptions — only `EntityId`/`EntityType`/`Action`/`Timestamp`/the acting `User`. This was a design requirement from the start, not an afterthought: an audit trail that itself stores freeform user content becomes another place that content has to be protected (encoding, length limits, access control) all over again, and it's not needed for the trail's actual purpose (who did what, to which record, when).
+
+### Accepted risks / known gaps (not fixed here, with reasoning)
+
+- **Username enumeration**: `Account/Register.aspx` and `Account/CustomerSignUp.aspx` say "That username is already taken," which confirms a given username exists. Usernames in this app are not secrets — they're already visible throughout (Manager's employee/customer lists, the Audit Log's User column), so this doesn't introduce meaningfully new exposure. Fixing it "properly" (generic error + email-based confirmation) would mean redesigning signup around email verification, which is out of scope for this app's model.
+- **No IP-based throttling on login or signup**: the lockout above is per-account. A distributed attacker guessing many different usernames (rather than brute-forcing one account) isn't slowed down by it. Per-IP or global rate limiting would need infrastructure this app doesn't have (no reverse proxy/WAF layer assumed).
+- **No password reset / account recovery flow**: not a vulnerability by itself, but it means a locked-out or forgotten-password account has no self-service path — a Manager (or direct DB access) is currently the only way to unblock one.
+- **`TestEF.aspx`/`TestDbContext`**: now gated to the `Manager` role and its output HTML-encoded (see above), but it's still the disconnected scratch pad described in [Known limitations](#known-limitations) below — reseeds fixed data into a separate database on every load. Recommend deleting it entirely before this app is ever deployed anywhere it could get real traffic.
+- **No HTTPS enforcement**: nothing in this app forces the connection itself onto HTTPS (no `RequireHttps` filter/redirect). `CookieSecure = SameAsRequest` adapts correctly *if* the site is served over HTTPS, but nothing here makes that happen — it's a hosting/IIS-configuration concern for whenever (if ever) this leaves localhost.
+
+### Migrations introduced by this section
+
+The login-lockout fields are a schema change:
+```
+Add-Migration AddLoginLockout -ConfigurationTypeName MasterAntiqueRepairData.Migrations.RepairShop.Configuration
+Update-Database -ConfigurationTypeName MasterAntiqueRepairData.Migrations.RepairShop.Configuration
+```
+(`Comment.Text`'s and `Ticket.Description`'s `[MaxLength(2000)]` changes were covered by earlier migrations already described elsewhere in this file's history — see `claude.log` for the full trail.)
+
 ## Known limitations
 
 - **`TestDbContext`/`TestEF.aspx`** are a separate, disconnected scratch pad, not guaranteed to stay in sync with the rest of the app as the domain model evolves. Prefer `MasterAntiqueRepairScratch` for new experiments.
 
 ## Project goals
 
-This is explicitly a "legacy build" learning exercise. The original scope:
+This is explicitly a "legacy build" learning exercise. The original scope, and where each item landed:
 
-- A core domain of 3–4 related entities with basic CRUD for each — see [Domain model](#domain-model).
+- A core domain of 3–4 related entities with basic CRUD for each — see [Domain model](#domain-model). Create/Read/Update/Delete are all covered for comments (see [Comments](#comments)); tickets and users currently support Create/Read (no UI path to edit/delete a ticket or user yet).
 - An approval/status-transition workflow with at least 3 states — see `State.RepairState`.
-- A simple login/role check (hardcoded roles are acceptable) — see [Authentication](#authentication).
-- One list/search view with filtering and pagination — the `EmployeeView`/`ManagerView`/`CustomerView` job lists.
-- Layered architecture (UI / business logic / data access separated, no logic in code-behind) — business logic lives on the domain classes (`Employee.TakeOrder`, `Customer.submit`, etc.), not in `.aspx.cs` files.
-- Server-side input validation.
-- Logging of workflow state changes — `Order.SubmittedDate`/`AssignedDate`/`CompletedDate` and `Comment`.
+- A simple login/role check (hardcoded roles are acceptable) — see [Authentication](#authentication), now with login lockout after repeated failures (see [Security](#security)).
+- One list/search view with filtering and pagination — the `EmployeeView`/`ManagerView`/`CustomerView` ticket lists, plus the Manager-only Audit Log's Entity Id search and adjustable page size (see [Manager tools](#manager-tools)).
+- Layered architecture (UI / business logic / data access separated, no logic in code-behind) — business logic lives on the domain classes (`Employee.TakeTicket`/`CompleteTicket`, `Customer.submit`, `User.AddComment`/`EditComment`/`DeleteComment`, etc.), not in `.aspx.cs` files.
+- Server-side input validation — see [Security](#security) for the full rundown (length limits, control-character rejection, password policy, etc.), not just presence-checks.
+- Logging of workflow state changes — the `AuditLog` entity and Manager-only Audit Log page (see [Domain model](#domain-model) and [Manager tools](#manager-tools)) now cover this as a real audit trail, not just the `Ticket.SubmittedDate`/`AssignedDate`/`CompletedDate` timestamps this started as.
 

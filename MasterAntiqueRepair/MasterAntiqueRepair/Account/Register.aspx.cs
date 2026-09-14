@@ -47,6 +47,14 @@ public partial class Account_Register : Page
             db.Users.Add(employee);
             db.SaveChanges();
 
+            var managerId = RepairAuthHelper.GetCurrentUserId();
+            var manager = db.Users.OfType<Manager>().FirstOrDefault(m => m.Id == managerId);
+            if (manager != null)
+            {
+                AuditLogger.Log(db, manager, AuditLog.ActionType.CreateUser, AuditLog.EntityKind.User, employee.Id);
+                db.SaveChanges();
+            }
+
             SuccessMessage.Text = "Employee account created for " + employee.Name + ".";
             UserName.Text = string.Empty;
             Password.Text = string.Empty;

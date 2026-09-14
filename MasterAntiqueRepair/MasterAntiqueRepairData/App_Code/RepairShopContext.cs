@@ -11,5 +11,7 @@ namespace MasterAntiqueRepair
         public DbSet<Ticket> Tickets { get; set; }
 
         public DbSet<Comment> Comments { get; set; }
+
+        public DbSet<AuditLog> AuditLogs { get; set; }
     }
 }

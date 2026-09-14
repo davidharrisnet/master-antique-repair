@@ -51,6 +51,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="App_Code\AuditLog.cs" />
+    <Compile Include="App_Code\AuditLogger.cs" />
     <Compile Include="App_Code\Comment.cs" />
     <Compile Include="App_Code\Customer.cs" />
     <Compile Include="App_Code\Employee.cs" />
@@ -96,6 +98,14 @@
     <Compile Include="Migrations\RepairShop\202609141418246_RemoveTicketComment.designer.cs">
       <DependentUpon>202609141418246_RemoveTicketComment.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\RepairShop\202609141507494_AddAuditLog.cs" />
+    <Compile Include="Migrations\RepairShop\202609141507494_AddAuditLog.designer.cs">
+      <DependentUpon>202609141507494_AddAuditLog.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\RepairShop\202609141544293_AddLoginLockout.cs" />
+    <Compile Include="Migrations\RepairShop\202609141544293_AddLoginLockout.designer.cs">
+      <DependentUpon>202609141544293_AddLoginLockout.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\RepairShop\Configuration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="App_Code\Ticket.cs" />
@@ -134,6 +144,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\RepairShop\202609141418246_RemoveTicketComment.resx">
       <DependentUpon>202609141418246_RemoveTicketComment.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\RepairShop\202609141507494_AddAuditLog.resx">
+      <DependentUpon>202609141507494_AddAuditLog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\RepairShop\202609141544293_AddLoginLockout.resx">
+      <DependentUpon>202609141544293_AddLoginLockout.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

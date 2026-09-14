@@ -17,7 +17,7 @@
                     <asp:Repeater runat="server" ID="EmployeeCommentsRepeater">
                         <HeaderTemplate><ul></HeaderTemplate>
                         <ItemTemplate>
-                            <li><%# Eval("Text") %> <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small></li>
+                            <li><%#: Eval("Text") %> <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small></li>
                         </ItemTemplate>
                         <FooterTemplate></ul></FooterTemplate>
                     </asp:Repeater>
@@ -29,7 +29,7 @@
                         <HeaderTemplate><ul></HeaderTemplate>
                         <ItemTemplate>
                             <li>
-                                <%# Eval("Text") %> <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small>
+                                <%#: Eval("Text") %> <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small>
                                 <br />
                                 <button type="button" class="btn btn-link btn-xs"
                                     onclick="openEditCommentModal('<%# Eval("Id") %>', '<%# System.Web.HttpUtility.JavaScriptStringEncode(Eval("Text").ToString()) %>')">Edit</button>

@@ -34,6 +34,9 @@ public partial class Account_CustomerSignUp : Page
             db.Users.Add(customer);
             db.SaveChanges();
 
+            AuditLogger.Log(db, customer, AuditLog.ActionType.CreateUser, AuditLog.EntityKind.User, customer.Id);
+            db.SaveChanges();
+
             RepairAuthHelper.SignIn(customer, isPersistent: false);
             Response.Redirect("~/CustomerView");
         }

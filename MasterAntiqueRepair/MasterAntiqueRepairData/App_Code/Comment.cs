@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 
 namespace MasterAntiqueRepair
 {
@@ -9,7 +10,10 @@ namespace MasterAntiqueRepair
         public virtual User User { get; set; }
         public int TicketId { get; set; }
         public virtual Ticket Ticket { get; set; }
+
+        [MaxLength(2000)]
         public String Text { get; set; }
+
         public DateTime CreatedAt { get; set; }
     }
 }

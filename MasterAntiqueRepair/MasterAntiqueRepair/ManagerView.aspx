@@ -7,12 +7,12 @@
     <asp:Repeater runat="server" ID="EmployeesRepeater" OnItemDataBound="EmployeesRepeater_ItemDataBound">
         <ItemTemplate>
             <div class="panel panel-default">
-                <div class="panel-heading"><%# Eval("Name") %></div>
+                <div class="panel-heading"><%#: Eval("Name") %></div>
                 <div class="panel-body">
                     <asp:Repeater runat="server" ID="TicketsRepeater">
                         <HeaderTemplate><ul></HeaderTemplate>
                         <ItemTemplate>
-                            <li><%# Eval("Description") %> (<%# Eval("State") %>)</li>
+                            <li><%#: Eval("Description") %> (<%# Eval("State") %>)</li>
                         </ItemTemplate>
                         <FooterTemplate></ul></FooterTemplate>
                     </asp:Repeater>
@@ -35,12 +35,12 @@
     <asp:Repeater runat="server" ID="CustomersRepeater" OnItemDataBound="CustomersRepeater_ItemDataBound">
         <ItemTemplate>
             <div class="panel panel-default">
-                <div class="panel-heading"><%# Eval("Key.Name") %></div>
+                <div class="panel-heading"><%#: Eval("Key.Name") %></div>
                 <div class="panel-body">
                     <asp:Repeater runat="server" ID="CustomerTicketsRepeater">
                         <HeaderTemplate><ul></HeaderTemplate>
                         <ItemTemplate>
-                            <li><%# Eval("Description") %> (<%# Eval("State") %>)</li>
+                            <li><%#: Eval("Description") %> (<%# Eval("State") %>)</li>
                         </ItemTemplate>
                         <FooterTemplate></ul></FooterTemplate>
                     </asp:Repeater>

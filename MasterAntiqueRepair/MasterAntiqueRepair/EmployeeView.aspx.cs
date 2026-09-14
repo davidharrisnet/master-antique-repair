@@ -76,7 +76,10 @@ public partial class EmployeeView : Page
             {
                 try
                 {
-                    employee.AddComment(ticket, NewCommentText.Text);
+                    var addedComment = employee.AddComment(ticket, NewCommentText.Text);
+                    db.SaveChanges();
+
+                    AuditLogger.Log(db, employee, AuditLog.ActionType.AddComment, AuditLog.EntityKind.Comment, addedComment.Id);
                     db.SaveChanges();
                 }
                 catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
@@ -114,6 +117,7 @@ public partial class EmployeeView : Page
                 try
                 {
                     employee.DeleteComment(comment);
+                    AuditLogger.Log(db, employee, AuditLog.ActionType.DeleteComment, AuditLog.EntityKind.Comment, comment.Id);
                     db.Comments.Remove(comment);
                     db.SaveChanges();
                 }
@@ -147,6 +151,7 @@ public partial class EmployeeView : Page
                 try
                 {
                     employee.EditComment(comment, EditCommentText.Text);
+                    AuditLogger.Log(db, employee, AuditLog.ActionType.EditComment, AuditLog.EntityKind.Comment, comment.Id);
                     db.SaveChanges();
                 }
                 catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
@@ -182,6 +187,7 @@ public partial class EmployeeView : Page
             if (employee != null && ticket != null && ticket.User == null)
             {
                 employee.TakeTicket(ticket);
+                AuditLogger.Log(db, employee, AuditLog.ActionType.AssignTicket, AuditLog.EntityKind.Ticket, ticket.Id);
                 db.SaveChanges();
             }
         }
@@ -208,6 +214,7 @@ public partial class EmployeeView : Page
             if (employee != null && ticket != null)
             {
                 employee.CompleteTicket(ticket, comment);
+                AuditLogger.Log(db, employee, AuditLog.ActionType.CompleteTicket, AuditLog.EntityKind.Ticket, ticket.Id);
                 db.SaveChanges();
             }
         }

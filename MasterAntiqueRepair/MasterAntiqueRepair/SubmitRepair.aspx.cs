@@ -32,8 +32,22 @@ public partial class SubmitRepair : Page
                 return;
             }
 
-            var ticket = Ticket.CreateSubmitted(Description.Text, customer);
+            Ticket ticket;
+            try
+            {
+                ticket = Ticket.CreateSubmitted(Description.Text, customer);
+            }
+            catch (ArgumentException ex)
+            {
+                ErrorMessage.Text = ex.Message;
+                ErrorMessage.Visible = true;
+                return;
+            }
+
             db.Tickets.Add(ticket);
+            db.SaveChanges();
+
+            AuditLogger.Log(db, customer, AuditLog.ActionType.CreateTicket, AuditLog.EntityKind.Ticket, ticket.Id);
             db.SaveChanges();
         }
 
