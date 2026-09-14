@@ -13,5 +13,7 @@ namespace MasterAntiqueRepair
         public DbSet<Comment> Comments { get; set; }
 
         public DbSet<AuditLog> AuditLogs { get; set; }
+
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
     }
 }

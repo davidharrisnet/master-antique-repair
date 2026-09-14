@@ -256,6 +256,7 @@ Authentication is custom, built directly on the domain model above — not ASP.N
 - **`MasterAntiqueRepair/App_Code/RepairAuthHelper.cs`** — builds a `ClaimsIdentity` from a domain `User` (name, ID, and role claims — the role claim is the concrete type name, e.g. `"Employee"`) and signs in via OWIN's cookie middleware. `RequireRole(Response, "RoleName")` guards protected pages, redirecting to Login if the visitor isn't authenticated in that role.
 - **`MasterAntiqueRepair/App_Code/Startup.Auth.cs`** — configures the OWIN cookie middleware (`DefaultAuthenticationTypes.ApplicationCookie`, login path `/Account/Login`) that `RepairAuthHelper` relies on.
 - After login, each role lands on its own page (`Employee` → `/EmployeeView`, `Manager` → `/ManagerView`, `Customer` → `/CustomerView`), unless a `ReturnUrl` was specified.
+- `Account/ForgotPassword` / `Account/ResetPassword` provide self-service password recovery — see [IP-based rate limiting, password reset, and HTTPS enforcement](#ip-based-rate-limiting-password-reset-and-https-enforcement) under Security for the full design (there's no email in this app, so the reset link is shown on-screen rather than sent).
 
 ## MasterAntiqueRepairData
 
@@ -269,38 +270,28 @@ The application's real `DbContext` — `DbSet<User> Users`, `DbSet<Ticket> Ticke
 
 Because a Migrations configuration exists for it, EF6 automatically uses `MigrateDatabaseToLatestVersion` as its initializer — not the plain `CreateDatabaseIfNotExists` default. In practice this means the very first request that touches `RepairShopContext` against a database with no `__MigrationHistory` row for this context runs every migration under `Migrations/RepairShop/` in order, starting with `InitialCreate` — which is what actually builds `dbo.Users`/`dbo.Tickets` from nothing (later migrations under the same folder add `dbo.Comments`, `dbo.AuditLogs`, and the various renames/column changes described in [Security](#security)). There's no separate "create schema" step; hitting the site (or running any of the `Scripts/*.ps1` seed/reset flows) is what triggers it.
 
-### `TestDbContext`
-
-A separate, scratch `DbContext` (`TestItem`, `User`, `Ticket` `DbSet`s) using its own `"TestConnection"` connection string and its own database, under its own EF6 Migrations configuration in `Migrations/` (the default location). Its own website-side consumer, `TestEF.aspx`, has been removed (see [Known limitations](#known-limitations)) — `TestDbContext`/`TestItem` are now unreferenced by the website entirely and exist only as leftover class-library code. Prefer `MasterAntiqueRepairScratch` for any new domain-model experiments.
-
 ### Running migrations
 
-Both connection strings live only in the website's `Web.config` — the class library itself has no `Web.config`/`App.config` connection strings; at runtime, the ASP.NET host's config is what EF reads regardless of which assembly the `DbContext` class lives in.
-
-Since two Migrations configurations coexist in this one project, PMC commands need an explicit `-ConfigurationTypeName`:
+The connection string lives only in the website's `Web.config` — the class library itself has no `Web.config`/`App.config` connection string of its own; at runtime, the ASP.NET host's config is what EF reads regardless of which assembly the `DbContext` class lives in.
 
 ```
-# For RepairShopContext:
 Add-Migration <Name> -ConfigurationTypeName MasterAntiqueRepairData.Migrations.RepairShop.Configuration
 Update-Database -ConfigurationTypeName MasterAntiqueRepairData.Migrations.RepairShop.Configuration
-
-# For TestDbContext:
-Add-Migration <Name> -ConfigurationTypeName MasterAntiqueRepairData.Migrations.Configuration
-Update-Database -ConfigurationTypeName MasterAntiqueRepairData.Migrations.Configuration
 ```
+
+(There used to be a second, scratch `TestDbContext` with its own Migrations configuration at the default `Migrations/` location, which is why commands got an explicit `-ConfigurationTypeName` in the first place — that context, its migrations, and its `TestConnection` connection string have all been deleted; `RepairShopContext`'s configuration is the only one left, so the flag is no longer strictly required, but there's no harm in keeping it.)
 
 Set **Default project** to `MasterAntiqueRepairData` in Package Manager Console first. Running migrations commands against the website project itself fails outright (`You cannot call a method on a null-valued expression`) — that's the reason this project exists.
 
 ## MasterAntiqueRepairScratch
 
-A plain Console App referencing `MasterAntiqueRepairData` directly, for trying out EF6/domain-model code without any web or IIS exposure — nothing in it can be reached by a browser. Its `App.config` has its own copies of both connection strings; `Program.cs` points `|DataDirectory|` at the website's real `App_Data` folder at startup, so it reads/writes the same databases as the live site (or `TestConnection`, matching `TestDbContext`/`TestEF.aspx`). Rewrite `Program.cs` freely — it's meant to be overwritten for whatever you're currently testing.
+A plain Console App referencing `MasterAntiqueRepairData` directly, for trying out EF6/domain-model code without any web or IIS exposure — nothing in it can be reached by a browser. Its `App.config` has its own copy of the `DefaultConnection` connection string; `Program.cs` points `|DataDirectory|` at the website's real `App_Data` folder at startup, so it reads/writes the same database as the live site. Rewrite `Program.cs` freely — it's meant to be overwritten for whatever you're currently testing.
 
 ## Accessing the database
 
-Both databases are LocalDB `.mdf` files under `MasterAntiqueRepair/MasterAntiqueRepair/App_Data/`:
+The database is a LocalDB `.mdf` file under `MasterAntiqueRepair/MasterAntiqueRepair/App_Data/`:
 
 - `aspnet-MasterAntiqueRepair-e93a6129-7f74-4486-97e8-8d4ab1a709b4.mdf` — the live app database (`DefaultConnection`, used by `RepairShopContext`).
-- `MasterAntiqueRepairTest.mdf` — the scratch database (`TestConnection`, used by `TestDbContext`).
 
 To connect with **SQL Server Management Studio**:
 
@@ -323,7 +314,7 @@ Build the schema first — F5 in Visual Studio, or `.\Scripts\Initialize-Databas
 ```
 .\Scripts\Seed-InitialUsers.ps1
 ```
-It targets the live app database by default; pass `-Database "MasterAntiqueRepairTest"` (or `-Server`) to target a different one. It creates:
+It targets the live app database by default; pass `-Database "<CatalogName>"` (or `-Server`) to target a different LocalDB catalog. It creates:
 
    | Role | Username | Password |
    |---|---|---|
@@ -341,7 +332,7 @@ The script hashes each password with the exact same PBKDF2 parameters as `Passwo
 .\Scripts\Reset-Database.ps1
 ```
 
-It targets the live app database by default; pass `-Database "MasterAntiqueRepairTest"` to wipe the scratch database instead. After running it, the database no longer exists — rebuild it with `.\Scripts\Initialize-Database.ps1` (or F5), then run `Seed-InitialUsers.ps1` afterward if you want the usual accounts back. The full cycle — reset, rebuild, seed — is testable end to end with no web server involved at all.
+It targets the live app database by default; pass `-Database "<CatalogName>"` to wipe a different LocalDB catalog instead. After running it, the database no longer exists — rebuild it with `.\Scripts\Initialize-Database.ps1` (or F5), then run `Seed-InitialUsers.ps1` afterward if you want the usual accounts back. The full cycle — reset, rebuild, seed — is testable end to end with no web server involved at all.
 
 The detach must happen before the files are deleted, not after — deleting the files first leaves a stale LocalDB catalog entry, and the next attach fails with `Cannot attach the file ... as database ...`. The script handles this ordering; if you're ever doing it by hand in SSMS, detach first.
 
@@ -395,34 +386,47 @@ It does **not** protect against a script already running on this app's own pages
 - **Password hashing** (`PasswordHasher.cs`): PBKDF2 (`Rfc2898DeriveBytes`) with a random 16-byte salt per password. The iteration count is now embedded in every newly-created hash (`"{iterations}.{salt}.{hash}"`), raised from 10,000 to 100,000. Embedding it means it can be raised again later without invalidating existing passwords — the previous design used a single hardcoded constant for both hashing and verifying, so bumping it would have silently locked every existing account (including the seeded demo accounts) out. Hashes created before this change (a bare base64 blob with no `.` separators) still verify correctly via a legacy fallback path at the old fixed 10,000 iterations — nothing already stored breaks. `Scripts/Seed-InitialUsers.ps1` still produces the old-format hash (it has its own PowerShell reimplementation of the same algorithm at 10,000 iterations) — this still logs in fine via the legacy path; it just won't benefit from the higher iteration count unless that script is updated too, or the seeded account's password is changed through the app.
 - **Constant-time comparison**: the byte-by-byte hash comparison now always inspects every byte rather than returning on the first mismatch, closing a (minor, hard-to-exploit-remotely, but free-to-fix) timing side channel.
 - **Password policy** (`User.SetPassword`): minimum length raised from 6 to 8 characters; a 128-character maximum was added (defense against feeding pathologically long input into the hashing step). No forced complexity rules (uppercase/digit/symbol) — current guidance (NIST SP 800-63B) favors length over composition rules, which tend to produce predictable patterns instead of real entropy.
-- **Login lockout** (`User.RecordFailedLogin`/`RecordSuccessfulLogin`/`IsLockedOut`, wired into `Account/Login.aspx.cs`): 5 consecutive failed attempts against an account locks it for 15 minutes; a successful login resets the counter. This is **per-account**, not per-IP — see accepted risks below for what that does and doesn't cover.
+- **Login lockout** (`User.RecordFailedLogin`/`RecordSuccessfulLogin`/`IsLockedOut`, wired into `Account/Login.aspx.cs`): 5 consecutive failed attempts against an account locks it for 15 minutes; a successful login resets the counter. This is **per-account**, not per-IP — see [IP-based rate limiting](#ip-based-rate-limiting-password-reset-and-https-enforcement) below for what covers the gap that leaves.
 - **Auth cookie** (`App_Code/Startup.Auth.cs`): explicit `CookieHttpOnly = true` and `CookieSecure = CookieSecureOption.SameAsRequest`. `SameAsRequest` (rather than `Always`) is deliberate — this project's documented dev workflow is plain HTTP via IIS Express, and `Always` would silently stop the auth cookie from ever being sent back to the browser under HTTP, breaking login for every contributor following the README as written. It upgrades to HTTPS-only automatically the moment this is actually served over HTTPS.
 
 ### Audit logging and comment content
 
 `AuditLog` (see the main architecture section) deliberately never stores comment text or ticket descriptions — only `EntityId`/`EntityType`/`Action`/`Timestamp`/the acting `User`. This was a design requirement from the start, not an afterthought: an audit trail that itself stores freeform user content becomes another place that content has to be protected (encoding, length limits, access control) all over again, and it's not needed for the trail's actual purpose (who did what, to which record, when).
 
-### Accepted risks / known gaps (not fixed here, with reasoning)
+### Bad/unknown URLs
 
-- **Username enumeration**: `Account/Register.aspx` and `Account/CustomerSignUp.aspx` say "That username is already taken," which confirms a given username exists. Usernames in this app are not secrets — they're already visible throughout (Manager's employee/customer lists, the Audit Log's User column), so this doesn't introduce meaningfully new exposure. Fixing it "properly" (generic error + email-based confirmation) would mean redesigning signup around email verification, which is out of scope for this app's model.
-- **No IP-based throttling on login or signup**: the lockout above is per-account. A distributed attacker guessing many different usernames (rather than brute-forcing one account) isn't slowed down by it. Per-IP or global rate limiting would need infrastructure this app doesn't have (no reverse proxy/WAF layer assumed).
-- **No password reset / account recovery flow**: not a vulnerability by itself, but it means a locked-out or forgotten-password account has no self-service path — a Manager (or direct DB access) is currently the only way to unblock one.
-- **`TestDbContext`/`TestItem`**: `TestEF.aspx`, their only website-side consumer, has been deleted (see [Known limitations](#known-limitations)). These class-library types are now fully unreferenced by the website; they're harmless leftover code, not a live attack surface, but a candidate for removal along with their `Migrations/` (default-location) configuration and the scratch `MasterAntiqueRepairTest` database.
-- **Bad/unknown URLs**: extensionless requests IIS resolves natively before ASP.NET routing ever sees them (e.g. a path with no matching route or file) are redirected to Home via `Web.config`'s `<httpErrors>` (`404` → `responseMode="Redirect"` to `/`). Requests that *do* reach the ASP.NET pipeline and throw a 404 (`HttpException`) are caught the same way via `Global.asax`'s `Application_Error`. Together these cover both paths a "page not found" can take through this stack.
-- **No HTTPS enforcement**: nothing in this app forces the connection itself onto HTTPS (no `RequireHttps` filter/redirect). `CookieSecure = SameAsRequest` adapts correctly *if* the site is served over HTTPS, but nothing here makes that happen — it's a hosting/IIS-configuration concern for whenever (if ever) this leaves localhost.
+Extensionless requests IIS resolves natively before ASP.NET routing ever sees them (e.g. a path with no matching route or file) are redirected to Home via `Web.config`'s `<httpErrors>` (`404` → `responseMode="Redirect"` to `/`). Requests that *do* reach the ASP.NET pipeline and throw a 404 (`HttpException`) are caught the same way via `Global.asax`'s `Application_Error`. Together these cover both paths a "page not found" can take through this stack.
+
+### IP-based rate limiting, password reset, and HTTPS enforcement
+
+These four were originally logged as accepted risks (see `claude.log` for that write-up); all four now have real mitigations.
+
+- **`App_Code/IpThrottle.cs`** (website `App_Code/`) — an in-memory, per-IP rate limiter keyed by `Request.UserHostAddress` plus a `scope` string, so login/signup/forgot-password attempts are tracked independently. It caps any single IP at 20 attempts per 15-minute sliding window per scope, then blocks further attempts in that scope until the window rolls over. This is deliberately separate from `User`'s per-account lockout above: the account lockout stops someone hammering *one* username; the IP throttle stops someone spreading attempts across *many* usernames from one source, which the account-level check alone can't see. State is process-local (an `ConcurrentDictionary`, not backed by the database) — it resets on app restart and isn't shared across server instances if this app were ever scaled out, which is an accepted limitation given this app has no reverse proxy/WAF layer to do this instead.
+  - Wired into `Account/Login.aspx.cs` (scope `"login"`, recorded on any failed or locked-out attempt), `Account/CustomerSignUp.aspx.cs` (scope `"signup"`, recorded whenever a chosen username is already taken), and `Account/ForgotPassword.aspx.cs` (scope `"forgotpassword"`, recorded on every request regardless of outcome).
+- **Username enumeration**: `Account/CustomerSignUp.aspx` still says "That username is already taken" rather than a generic message — that part of the original reasoning still holds (usernames in this app aren't secrets; they're already visible in Manager views and the Audit Log's User column, and a real fix would mean redesigning signup around email verification, out of scope here). What changed is the `IpThrottle` "signup" scope above now caps how fast one IP can sweep through candidate usernames looking for hits, which is the part of this risk that's actually exploitable at scale.
+- **Password reset**: `PasswordResetToken` (`MasterAntiqueRepairData/App_Code/`) — `Id`, `UserId`, `Token` (a random 32-byte value, URL-safe base64-encoded), `CreatedAt`, `ExpiresAt` (1 hour after creation), `UsedAt` (null until consumed). `Account/ForgotPassword.aspx` takes a username, throttles by IP (see above), and — if the account exists — creates a token and displays the reset link directly on the page. **This app has no SMTP configured anywhere**, so rather than fake an email that never sends, the link is shown on-screen, clearly labeled as a local/dev stand-in; a real deployment would email `resetUrl` instead of rendering it (that's the one line in `ForgotPassword.aspx.cs` to change). `Account/ResetPassword.aspx?token=...` validates the token (exists, unused, unexpired) before accepting a new password, marks the token used on success, and — since successfully using a valid token proves account ownership — also clears any existing account lockout on that user. Both requesting and completing a reset are logged (`AuditLog.ActionType.RequestPasswordReset`/`ResetPassword`) without storing the token itself in the log.
+- **HTTPS enforcement**: opt-in via `Web.config`'s new `<appSettings>` key `RequireHttps` (default `false`). `Global.asax`'s `Application_BeginRequest` redirects to HTTPS only when that flag is `true` **and** the request isn't already secure **and** `Request.IsLocal` is false — so the default local dev workflow (plain HTTP via IIS Express, no HTTPS binding configured) is completely unaffected unless someone deliberately flips the flag in an environment that actually has an HTTPS binding.
 
 ### Migrations introduced by this section
 
-The login-lockout fields are a schema change:
+The login-lockout fields were a schema change:
 ```
 Add-Migration AddLoginLockout -ConfigurationTypeName MasterAntiqueRepairData.Migrations.RepairShop.Configuration
 Update-Database -ConfigurationTypeName MasterAntiqueRepairData.Migrations.RepairShop.Configuration
 ```
 (`Comment.Text`'s and `Ticket.Description`'s `[MaxLength(2000)]` changes were covered by earlier migrations already described elsewhere in this file's history — see `claude.log` for the full trail.)
 
+The new `PasswordResetToken` entity/table is also a schema change, not yet applied to any database as of this writing:
+```
+Add-Migration AddPasswordResetTokens -ConfigurationTypeName MasterAntiqueRepairData.Migrations.RepairShop.Configuration
+Update-Database -ConfigurationTypeName MasterAntiqueRepairData.Migrations.RepairShop.Configuration
+```
+Until this migration is applied, EF6 throws `The model backing the 'RepairShopContext' context has changed since the database was created` on the **first** request that touches `RepairShopContext` — which in practice is almost every page, not just the new reset pages, since the model check runs on first use per process. Run the migration before testing any of this.
+
 ## Known limitations
 
-- **`TestDbContext`/`TestItem`** (`MasterAntiqueRepairData/App_Code/`) were a separate, disconnected scratch pad's data layer, never guaranteed to stay in sync with the rest of the app as the domain model evolves — and it didn't: shared changes to `User`/`Ticket` this project made along the way left `TestDbContext`'s model out of sync with its own migration history, and its one website-side consumer, `TestEF.aspx`, has since been deleted rather than fixed. The class-library types themselves are still present but fully unreferenced. Prefer `MasterAntiqueRepairScratch` for any new domain-model experiments.
+- The password reset flow (see [Security](#security)) has no email/SMTP behind it — the reset link is shown directly on the `Forgot Password` page instead of being sent anywhere, which only works because the person requesting the reset is also the one viewing that page (fine for local/dev use; a real deployment needs to swap that one line for an actual email send).
+- `IpThrottle`'s rate-limiting state is in-memory per process — it resets on an app restart and wouldn't be shared across server instances if this app were ever scaled out to more than one.
 
 ## Project goals
 

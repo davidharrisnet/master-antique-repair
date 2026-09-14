@@ -2,6 +2,7 @@
 <%@ Import Namespace="MasterAntiqueRepair" %>
 <%@ Import Namespace="System.Web.Optimization" %>
 <%@ Import Namespace="System.Web.Routing" %>
+<%@ Import Namespace="System.Web.Configuration" %>
 
 <script runat="server">
 
@@ -9,6 +10,20 @@
     {
         RouteConfig.RegisterRoutes(RouteTable.Routes);
         BundleConfig.RegisterBundles(BundleTable.Bundles);
+    }
+
+    void Application_BeginRequest(object sender, EventArgs e)
+    {
+        // Opt-in HTTPS enforcement - see the RequireHttps comment in Web.config.
+        // Skipped for local requests so IIS Express's plain-HTTP dev workflow
+        // (no HTTPS binding configured) never breaks, even if this were left on.
+        var requireHttps = WebConfigurationManager.AppSettings["RequireHttps"];
+        if (string.Equals(requireHttps, "true", StringComparison.OrdinalIgnoreCase)
+            && !Request.IsSecureConnection
+            && !Request.IsLocal)
+        {
+            Response.Redirect("https://" + Request.Url.Host + Request.RawUrl, true);
+        }
     }
 
     void Application_Error(object sender, EventArgs e)

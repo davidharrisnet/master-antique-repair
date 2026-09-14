@@ -39,6 +39,9 @@
                     <asp:HyperLink runat="server" ID="RegisterHyperLink" ViewStateMode="Disabled">Sign up</asp:HyperLink>
                     if you're a customer without an account yet.
                 </p>
+                <p>
+                    <a href="ForgotPassword">Forgot your password?</a>
+                </p>
             </section>
         </div>
     </div>

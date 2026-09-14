@@ -20,12 +20,21 @@ public partial class Account_Login : Page
         {
             if (IsValid)
             {
+                var ip = Request.UserHostAddress;
+                if (IpThrottle.IsBlocked("login", ip))
+                {
+                    FailureText.Text = "Too many login attempts from this location. Please try again later.";
+                    ErrorMessage.Visible = true;
+                    return;
+                }
+
                 using (var db = new RepairShopContext())
                 {
                     var user = db.Users.FirstOrDefault(u => u.Name == UserName.Text);
 
                     if (user != null && user.IsLockedOut())
                     {
+                        IpThrottle.RecordAttempt("login", ip);
                         FailureText.Text = "This account is temporarily locked due to repeated failed login attempts. Please try again later.";
                         ErrorMessage.Visible = true;
                         return;
@@ -65,6 +74,8 @@ public partial class Account_Login : Page
                     }
                     else
                     {
+                        IpThrottle.RecordAttempt("login", ip);
+
                         if (user != null)
                         {
                             user.RecordFailedLogin();
