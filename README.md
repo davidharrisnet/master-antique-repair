@@ -2,6 +2,74 @@
 
 A repair-shop tracking application: customers submit repair requests for antique items, employees pick up and complete them, and managers oversee the whole workload. Built as an ASP.NET Web Forms "legacy build" exercise (see [Project goals](#project-goals) below).
 
+## Overview
+
+**PHASE 1 — Legacy Build**
+Stack: ASP.NET Framework 4.7.2, C#, WebForms, SQL Server
+
+Functional requirements:
+
+1.	A single core domain with 3–4 related entities (e.g., a simple case/request tracking app: Requests → Assignees → Status History)
+
+**User Roles**<span id="roles">
+
+MasterAntiqueRepair has manager, employee, and customer roles.
+   * customer: creates repair tickets with a description with an initial state of SUBMITTED
+   * employee: The employee home pages presents a list of submitted jobs, and can assign themself to the ticket. The employee then owns the ticket, and the ticket is in the INPROGRESS state. Employees can mark inprogress tickets to COMPLETE.
+
+2.	Basic CRUD for each entity
+  * Create, and Read
+  * TODO: Update, Delete
+  
+3.	One approval/status-transition workflow with at least 3 states (e.g., Submitted → InProgress → Complete)
+4.	A simple login/role check (hardcoded roles are fine)
+    * manager, employee have preassigned credentials
+    * customers may be created via "Sign up"
+
+|Name|Password|
+|---|---|
+|manager|ManagerPass123!|
+|employee1|EmployeePass123!|
+|employee2|EmployeePass456!|
+|customer1|CustomerPass123!|
+|customer2|CustomerPass123!|
+
+5.	One list/search view with filtering and pagination
+
+* list: mangers see a list of employee tickets and customer unasigned tickets.
+* TODO: searching
+
+Non-functional requirements:
+
+6.	Layered architecture (UI / business logic / data access clearly separated — no logic in code-behind)*	Server-side input validation
+* user logins are validated.
+* TODO: other elments of input validation.
+7.	Logging of workflow state changes (this becomes your audit trail in Phase 2)
+* TODO: Loggging
+8.	A short README explaining the structure and how to run it
+* [Overview](#roles)
+
+
+
+MasterAntiqueRepair provides the necessary functionality for 
+
+## Getting the code
+
+**Latest code** (`main`):
+```bash
+git clone https://github.com/davidharrisnet/master-antique-repair.git
+```
+
+**A specific released version** (e.g. `v1.0` — see all released versions at [github.com/davidharrisnet/master-antique-repair/releases](https://github.com/davidharrisnet/master-antique-repair/releases)):
+```bash
+git clone --branch v1.0 https://github.com/davidharrisnet/master-antique-repair.git
+```
+This pins the clone to that exact tagged snapshot rather than the latest `main`. Git will report "detached HEAD" after — that's expected and not a problem; it just means you're not on a branch that can be pushed to, which is correct for a fixed version. `git checkout main` switches back to normal branch work if you need to.
+
+**No git at all**: open the [Releases page](https://github.com/davidharrisnet/master-antique-repair/releases), pick a version, and use its "Source code (zip)" download link.
+
+Once you have the code, continue with [Getting started](#getting-started-new-developer-setup) below to set it up.
+
 ## Stack
 
 - ASP.NET Web Forms, C#, .NET Framework 4.7.2
@@ -70,7 +138,7 @@ Then log in at `/Account/Login` (F5 in Visual Studio to actually run the site) a
    ```
    An empty result from the first command means the "ASP.NET and web development" workload isn't installed — add it via the Visual Studio Installer (not a reinstall of Visual Studio itself).
 
-2. **Clone the repo and open** `MasterAntiqueRepair/MasterAntiqueRepair.sln` in Visual Studio.
+2. **Get the code** (see [Getting the code](#getting-the-code) above for cloning a specific released version instead of latest `main`) and **open** `MasterAntiqueRepair/MasterAntiqueRepair.sln` in Visual Studio.
 
 3. **Restore NuGet packages**: `nuget restore MasterAntiqueRepair/MasterAntiqueRepair.sln`, or let Visual Studio do it on open.
 
@@ -255,3 +323,4 @@ This is explicitly a "legacy build" learning exercise. The original scope:
 - Layered architecture (UI / business logic / data access separated, no logic in code-behind) — business logic lives on the domain classes (`Employee.TakeOrder`, `Customer.submit`, etc.), not in `.aspx.cs` files.
 - Server-side input validation.
 - Logging of workflow state changes — `Order.SubmittedDate`/`AssignedDate`/`CompletedDate` and `Comment`.
+
