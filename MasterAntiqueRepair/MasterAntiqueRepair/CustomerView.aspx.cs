@@ -87,4 +87,74 @@ public partial class CustomerView : Page
         CommentErrorLabel.Visible = false;
         BindGrid();
     }
+
+    protected void CommentsRepeater_ItemCommand(object sender, RepeaterCommandEventArgs e)
+    {
+        if (e.CommandName != "DeleteComment")
+        {
+            return;
+        }
+
+        var commentId = Convert.ToInt32(e.CommandArgument);
+        var customerId = RepairAuthHelper.GetCurrentUserId();
+
+        using (var db = new RepairShopContext())
+        {
+            var customer = db.Users.OfType<Customer>().FirstOrDefault(c => c.Id == customerId);
+            var comment = db.Comments.FirstOrDefault(c => c.Id == commentId);
+
+            if (customer != null && comment != null)
+            {
+                try
+                {
+                    customer.DeleteComment(comment);
+                    db.Comments.Remove(comment);
+                    db.SaveChanges();
+                }
+                catch (InvalidOperationException)
+                {
+                    // Not this customer's comment - ignore.
+                }
+            }
+        }
+
+        BindGrid();
+    }
+
+    protected void SaveEditComment_Click(object sender, EventArgs e)
+    {
+        int commentId;
+        if (!int.TryParse(EditCommentId.Value, out commentId))
+        {
+            return;
+        }
+
+        var customerId = RepairAuthHelper.GetCurrentUserId();
+
+        using (var db = new RepairShopContext())
+        {
+            var customer = db.Users.OfType<Customer>().FirstOrDefault(c => c.Id == customerId);
+            var comment = db.Comments.FirstOrDefault(c => c.Id == commentId);
+
+            if (customer != null && comment != null)
+            {
+                try
+                {
+                    customer.EditComment(comment, EditCommentText.Text);
+                    db.SaveChanges();
+                }
+                catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
+                {
+                    EditCommentErrorLabel.Text = ex.Message;
+                    EditCommentErrorLabel.Visible = true;
+                    return;
+                }
+            }
+        }
+
+        EditCommentText.Text = string.Empty;
+        EditCommentId.Value = string.Empty;
+        EditCommentErrorLabel.Visible = false;
+        BindGrid();
+    }
 }

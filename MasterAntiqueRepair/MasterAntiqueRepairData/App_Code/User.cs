@@ -54,6 +54,28 @@ namespace MasterAntiqueRepair
             ticket.Comments.Add(comment);
             return comment;
         }
+
+        public void EditComment(Comment comment, string newText)
+        {
+            if (comment.UserId != Id)
+            {
+                throw new InvalidOperationException("You can only edit your own comments.");
+            }
+            if (string.IsNullOrWhiteSpace(newText))
+            {
+                throw new ArgumentException("Comment text is required.", nameof(newText));
+            }
+
+            comment.Text = newText.Trim();
+        }
+
+        public void DeleteComment(Comment comment)
+        {
+            if (comment.UserId != Id)
+            {
+                throw new InvalidOperationException("You can only delete your own comments.");
+            }
+        }
     }
         
 }

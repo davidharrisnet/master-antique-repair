@@ -94,6 +94,76 @@ public partial class EmployeeView : Page
         BindGrids();
     }
 
+    protected void EmployeeCommentsRepeater_ItemCommand(object sender, RepeaterCommandEventArgs e)
+    {
+        if (e.CommandName != "DeleteComment")
+        {
+            return;
+        }
+
+        var commentId = Convert.ToInt32(e.CommandArgument);
+        var employeeId = RepairAuthHelper.GetCurrentUserId();
+
+        using (var db = new RepairShopContext())
+        {
+            var employee = db.Users.OfType<Employee>().FirstOrDefault(u => u.Id == employeeId);
+            var comment = db.Comments.FirstOrDefault(c => c.Id == commentId);
+
+            if (employee != null && comment != null)
+            {
+                try
+                {
+                    employee.DeleteComment(comment);
+                    db.Comments.Remove(comment);
+                    db.SaveChanges();
+                }
+                catch (InvalidOperationException)
+                {
+                    // Not this employee's comment - ignore.
+                }
+            }
+        }
+
+        BindGrids();
+    }
+
+    protected void SaveEditComment_Click(object sender, EventArgs e)
+    {
+        int commentId;
+        if (!int.TryParse(EditCommentId.Value, out commentId))
+        {
+            return;
+        }
+
+        var employeeId = RepairAuthHelper.GetCurrentUserId();
+
+        using (var db = new RepairShopContext())
+        {
+            var employee = db.Users.OfType<Employee>().FirstOrDefault(u => u.Id == employeeId);
+            var comment = db.Comments.FirstOrDefault(c => c.Id == commentId);
+
+            if (employee != null && comment != null)
+            {
+                try
+                {
+                    employee.EditComment(comment, EditCommentText.Text);
+                    db.SaveChanges();
+                }
+                catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
+                {
+                    EditCommentErrorLabel.Text = ex.Message;
+                    EditCommentErrorLabel.Visible = true;
+                    return;
+                }
+            }
+        }
+
+        EditCommentText.Text = string.Empty;
+        EditCommentId.Value = string.Empty;
+        EditCommentErrorLabel.Visible = false;
+        BindGrids();
+    }
+
     protected void UnassignedGrid_RowCommand(object sender, GridViewCommandEventArgs e)
     {
         if (e.CommandName != "Take")

@@ -25,10 +25,17 @@
             </asp:TemplateField>
             <asp:TemplateField HeaderText="Customer Comments">
                 <ItemTemplate>
-                    <asp:Repeater runat="server" ID="CommentsRepeater">
+                    <asp:Repeater runat="server" ID="CommentsRepeater" OnItemCommand="CommentsRepeater_ItemCommand">
                         <HeaderTemplate><ul></HeaderTemplate>
                         <ItemTemplate>
-                            <li><%# Eval("Text") %> <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small></li>
+                            <li>
+                                <%# Eval("Text") %> <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small>
+                                <br />
+                                <button type="button" class="btn btn-link btn-xs"
+                                    onclick="openEditCommentModal('<%# Eval("Id") %>', '<%# System.Web.HttpUtility.JavaScriptStringEncode(Eval("Text").ToString()) %>')">Edit</button>
+                                <asp:LinkButton runat="server" CssClass="btn btn-link btn-xs" CommandName="DeleteComment" CommandArgument='<%# Eval("Id") %>'
+                                    OnClientClick="return confirm('Are you sure?');">Delete</asp:LinkButton>
+                            </li>
                         </ItemTemplate>
                         <FooterTemplate></ul></FooterTemplate>
                     </asp:Repeater>
@@ -67,10 +74,39 @@
         </div>
     </div>
 
+    <div class="modal fade" id="editCommentModal" tabindex="-1" role="dialog" aria-labelledby="editCommentModalLabel">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                    <h4 class="modal-title" id="editCommentModalLabel">Edit Comment</h4>
+                </div>
+                <div class="modal-body">
+                    <asp:HiddenField runat="server" ID="EditCommentId" />
+                    <asp:Label runat="server" ID="EditCommentErrorLabel" CssClass="text-danger" Visible="false" />
+                    <div class="form-group">
+                        <asp:Label runat="server" AssociatedControlID="EditCommentText">Comment</asp:Label>
+                        <asp:TextBox runat="server" ID="EditCommentText" TextMode="MultiLine" Rows="3" CssClass="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <asp:Button runat="server" ID="SaveEditCommentButton" Text="Save" OnClick="SaveEditComment_Click" CssClass="btn btn-primary" />
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script type="text/javascript">
         function openAddCommentModal(ticketId) {
             document.getElementById('<%= CommentTicketId.ClientID %>').value = ticketId;
             $('#addCommentModal').modal('show');
+        }
+
+        function openEditCommentModal(commentId, currentText) {
+            document.getElementById('<%= EditCommentId.ClientID %>').value = commentId;
+            document.getElementById('<%= EditCommentText.ClientID %>').value = currentText;
+            $('#editCommentModal').modal('show');
         }
     </script>
 </asp:Content>
