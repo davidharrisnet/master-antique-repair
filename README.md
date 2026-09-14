@@ -14,8 +14,9 @@ Functional requirements:
 **User Roles**<span id="roles">
 
 MasterAntiqueRepair has manager, employee, and customer roles.
-   * customer: creates repair tickets with a description with an initial state of SUBMITTED
-   * employee: The employee home pages presents a list of submitted jobs, and can assign themself to the ticket. The employee then owns the ticket, and the ticket is in the INPROGRESS state. Employees can mark inprogress tickets to COMPLETE.
+   * **customer**: creates repair tickets with a description with an initial state of SUBMITTED
+   * **employee**: The employee home pages presents a list of submitted jobs, and can assign themself to the ticket. The employee then owns the ticket, and the ticket is in the INPROGRESS state. Employees can mark inprogress tickets to COMPLETE.
+   * **manager**: Views the list of employees and their assigned items and a list of customers with there tickets.
 
 2.	Basic CRUD for each entity
   * Create, and Read
