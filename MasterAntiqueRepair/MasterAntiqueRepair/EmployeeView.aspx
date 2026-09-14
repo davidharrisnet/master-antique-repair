@@ -12,7 +12,7 @@
             <asp:BoundField DataField="SubmittedDate" HeaderText="Submitted" DataFormatString="{0:g}" />
             <asp:TemplateField>
                 <ItemTemplate>
-                    <asp:Button runat="server" Text="Assign to Me" CommandName="Take" CommandArgument='<%# Eval("Id") %>' CssClass="btn btn-default btn-sm" />
+                    <asp:Button runat="server" Text="Assign to Me" CommandName="Take" CommandArgument='<%# Eval("Id") %>' CssClass="btn btn-success btn-sm" />
                 </ItemTemplate>
             </asp:TemplateField>
         </Columns>
@@ -24,7 +24,11 @@
         <Columns>
             <asp:BoundField DataField="Id" HeaderText="Id" />
             <asp:BoundField DataField="Description" HeaderText="Description" />
-            <asp:BoundField DataField="State" HeaderText="Status" />
+            <asp:TemplateField HeaderText="Status">
+                <ItemTemplate>
+                    <span class='label <%# MasterAntiqueRepair.UiHelpers.StatusLabelClass((MasterAntiqueRepair.State.RepairState)Eval("State")) %>'><%# Eval("State") %></span>
+                </ItemTemplate>
+            </asp:TemplateField>
             <asp:BoundField DataField="AssignedDate" HeaderText="Assigned" DataFormatString="{0:g}" />
             <asp:BoundField DataField="CompletedDate" HeaderText="Completed" DataFormatString="{0:g}" />
             <asp:TemplateField HeaderText="Employee Comments">
@@ -33,18 +37,19 @@
                         <HeaderTemplate><ul></HeaderTemplate>
                         <ItemTemplate>
                             <li>
-                                <%#: Eval("Text") %> <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small>
+                                <span class="popover-toggle" tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-content='<%#: Eval("Text") %>'><%#: MasterAntiqueRepair.UiHelpers.Truncate(Eval("Text").ToString(), 60) %></span>
+                                <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small>
                                 <br />
                                 <button type="button" class="btn btn-link btn-xs"
                                     onclick="openEditCommentModal('<%# Eval("Id") %>', '<%# System.Web.HttpUtility.JavaScriptStringEncode(Eval("Text").ToString()) %>')">Edit</button>
-                                <asp:LinkButton runat="server" CssClass="btn btn-link btn-xs" CommandName="DeleteComment" CommandArgument='<%# Eval("Id") %>'
+                                <asp:LinkButton runat="server" CssClass="btn btn-link btn-xs text-danger" CommandName="DeleteComment" CommandArgument='<%# Eval("Id") %>'
                                     OnClientClick="return confirm('Are you sure?');">Delete</asp:LinkButton>
                             </li>
                         </ItemTemplate>
                         <FooterTemplate></ul></FooterTemplate>
                     </asp:Repeater>
                     <asp:Panel runat="server" Visible='<%# (MasterAntiqueRepair.State.RepairState)Eval("State") == MasterAntiqueRepair.State.RepairState.COMPLETED %>'>
-                        <button type="button" class="btn btn-default btn-sm"
+                        <button type="button" class="btn btn-info btn-sm"
                             onclick="openAddCommentModal('<%# Eval("Id") %>')">
                             Add Comment
                         </button>
@@ -56,7 +61,10 @@
                     <asp:Repeater runat="server" ID="CustomerCommentsRepeater">
                         <HeaderTemplate><ul></HeaderTemplate>
                         <ItemTemplate>
-                            <li><%#: Eval("Text") %> <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small></li>
+                            <li>
+                                <span class="popover-toggle" tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-content='<%#: Eval("Text") %>'><%#: MasterAntiqueRepair.UiHelpers.Truncate(Eval("Text").ToString(), 60) %></span>
+                                <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small>
+                            </li>
                         </ItemTemplate>
                         <FooterTemplate></ul></FooterTemplate>
                     </asp:Repeater>
@@ -65,7 +73,7 @@
             <asp:TemplateField HeaderText="Complete">
                 <ItemTemplate>
                     <asp:Panel runat="server" Visible='<%# (MasterAntiqueRepair.State.RepairState)Eval("State") != MasterAntiqueRepair.State.RepairState.COMPLETED %>'>
-                        <button type="button" class="btn btn-default btn-sm"
+                        <button type="button" class="btn btn-success btn-sm"
                             onclick="openCompleteModal('<%# Eval("Id") %>', '<%# System.Web.HttpUtility.JavaScriptStringEncode(Eval("Description").ToString()) %>')">
                             Mark Complete
                         </button>
@@ -93,7 +101,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
-                    <asp:Button runat="server" ID="ConfirmCompleteButton" Text="Mark Complete" OnClick="ConfirmComplete_Click" CssClass="btn btn-primary" />
+                    <asp:Button runat="server" ID="ConfirmCompleteButton" Text="Mark Complete" OnClick="ConfirmComplete_Click" CssClass="btn btn-success" />
                 </div>
             </div>
         </div>
@@ -162,5 +170,9 @@
             document.getElementById('<%= EditCommentText.ClientID %>').value = currentText;
             $('#editCommentModal').modal('show');
         }
+
+        $(function () {
+            $('[data-toggle="popover"]').popover();
+        });
     </script>
 </asp:Content>

@@ -3,21 +3,28 @@
 <asp:Content runat="server" ID="BodyContent" ContentPlaceHolderID="MainContent">
     <h2><%: Title %>.</h2>
 
-    <p><a runat="server" href="~/SubmitRepair" class="btn btn-default">Submit a new repair request</a></p>
+    <p><a runat="server" href="~/SubmitRepair" class="btn btn-primary">Submit a new repair request</a></p>
 
     <h3>My Repair Requests</h3>
     <asp:GridView runat="server" ID="MyTicketsGrid" AutoGenerateColumns="false" CssClass="table" OnRowDataBound="MyTicketsGrid_RowDataBound">
         <Columns>
             <asp:BoundField DataField="Id" HeaderText="Id" />
             <asp:BoundField DataField="Description" HeaderText="Description" />
-            <asp:BoundField DataField="State" HeaderText="Status" />
+            <asp:TemplateField HeaderText="Status">
+                <ItemTemplate>
+                    <span class='label <%# MasterAntiqueRepair.UiHelpers.StatusLabelClass((MasterAntiqueRepair.State.RepairState)Eval("State")) %>'><%# Eval("State") %></span>
+                </ItemTemplate>
+            </asp:TemplateField>
             <asp:BoundField DataField="SubmittedDate" HeaderText="Submitted" DataFormatString="{0:g}" />
             <asp:TemplateField HeaderText="Employee Comments">
                 <ItemTemplate>
                     <asp:Repeater runat="server" ID="EmployeeCommentsRepeater">
                         <HeaderTemplate><ul></HeaderTemplate>
                         <ItemTemplate>
-                            <li><%#: Eval("Text") %> <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small></li>
+                            <li>
+                                <span class="popover-toggle" tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-content='<%#: Eval("Text") %>'><%#: MasterAntiqueRepair.UiHelpers.Truncate(Eval("Text").ToString(), 60) %></span>
+                                <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small>
+                            </li>
                         </ItemTemplate>
                         <FooterTemplate></ul></FooterTemplate>
                     </asp:Repeater>
@@ -29,18 +36,19 @@
                         <HeaderTemplate><ul></HeaderTemplate>
                         <ItemTemplate>
                             <li>
-                                <%#: Eval("Text") %> <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small>
+                                <span class="popover-toggle" tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-content='<%#: Eval("Text") %>'><%#: MasterAntiqueRepair.UiHelpers.Truncate(Eval("Text").ToString(), 60) %></span>
+                                <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small>
                                 <br />
                                 <button type="button" class="btn btn-link btn-xs"
                                     onclick="openEditCommentModal('<%# Eval("Id") %>', '<%# System.Web.HttpUtility.JavaScriptStringEncode(Eval("Text").ToString()) %>')">Edit</button>
-                                <asp:LinkButton runat="server" CssClass="btn btn-link btn-xs" CommandName="DeleteComment" CommandArgument='<%# Eval("Id") %>'
+                                <asp:LinkButton runat="server" CssClass="btn btn-link btn-xs text-danger" CommandName="DeleteComment" CommandArgument='<%# Eval("Id") %>'
                                     OnClientClick="return confirm('Are you sure?');">Delete</asp:LinkButton>
                             </li>
                         </ItemTemplate>
                         <FooterTemplate></ul></FooterTemplate>
                     </asp:Repeater>
                     <asp:Panel runat="server" Visible='<%# (MasterAntiqueRepair.State.RepairState)Eval("State") == MasterAntiqueRepair.State.RepairState.COMPLETED %>'>
-                        <button type="button" class="btn btn-default btn-sm"
+                        <button type="button" class="btn btn-info btn-sm"
                             onclick="openAddCommentModal('<%# Eval("Id") %>')">
                             Add Comment
                         </button>
@@ -108,5 +116,9 @@
             document.getElementById('<%= EditCommentText.ClientID %>').value = currentText;
             $('#editCommentModal').modal('show');
         }
+
+        $(function () {
+            $('[data-toggle="popover"]').popover();
+        });
     </script>
 </asp:Content>

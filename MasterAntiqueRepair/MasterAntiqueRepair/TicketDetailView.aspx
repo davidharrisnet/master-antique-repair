@@ -1,4 +1,4 @@
-<%@ Page Title="Search" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeFile="TicketDetailView.aspx.cs" Inherits="TicketDetailView" %>
+<%@ Page Title="Search" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeFile="TicketDetailView.aspx.cs" Inherits="TicketDetailView" MaintainScrollPositionOnPostBack="true" %>
 
 <asp:Content runat="server" ID="BodyContent" ContentPlaceHolderID="MainContent">
     <h2><%: Title %>.</h2>
@@ -13,7 +13,7 @@
             <asp:Label runat="server" AssociatedControlID="TicketIdText">Or enter a Ticket Id</asp:Label>
             <asp:TextBox runat="server" ID="TicketIdText" CssClass="form-control" />
         </div>
-        <asp:Button runat="server" Text="Search" OnClick="Search_Click" CssClass="btn btn-default" />
+        <asp:Button runat="server" Text="Search" OnClick="Search_Click" CssClass="btn btn-primary" />
     </div>
 
     <asp:Panel runat="server" ID="NotFoundPanel" Visible="false" CssClass="text-danger">
@@ -26,7 +26,7 @@
             <dt>Description</dt>
             <dd><asp:Literal runat="server" ID="DescriptionLiteral" Mode="Encode" /></dd>
             <dt>Status</dt>
-            <dd><asp:Literal runat="server" ID="StateLiteral" Mode="Encode" /></dd>
+            <dd><asp:Literal runat="server" ID="StateLiteral" /></dd>
             <dt>Customer</dt>
             <dd><asp:Literal runat="server" ID="CustomerLiteral" /></dd>
             <dt>Assigned To</dt>
@@ -43,7 +43,10 @@
         <asp:Repeater runat="server" ID="EmployeeCommentsRepeater">
             <HeaderTemplate><ul></HeaderTemplate>
             <ItemTemplate>
-                <li><%#: Eval("Text") %> <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small></li>
+                <li>
+                    <span class="popover-toggle" tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-content='<%#: Eval("Text") %>'><%#: MasterAntiqueRepair.UiHelpers.Truncate(Eval("Text").ToString(), 60) %></span>
+                    <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small>
+                </li>
             </ItemTemplate>
             <FooterTemplate></ul></FooterTemplate>
             <SeparatorTemplate></SeparatorTemplate>
@@ -54,7 +57,10 @@
         <asp:Repeater runat="server" ID="CustomerCommentsRepeater">
             <HeaderTemplate><ul></HeaderTemplate>
             <ItemTemplate>
-                <li><%#: Eval("Text") %> <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small></li>
+                <li>
+                    <span class="popover-toggle" tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-content='<%#: Eval("Text") %>'><%#: MasterAntiqueRepair.UiHelpers.Truncate(Eval("Text").ToString(), 60) %></span>
+                    <small>(<%# Eval("CreatedAt", "{0:g}") %>)</small>
+                </li>
             </ItemTemplate>
             <FooterTemplate></ul></FooterTemplate>
         </asp:Repeater>
@@ -73,7 +79,7 @@
             <asp:Label runat="server" AssociatedControlID="CustomerIdText">Or enter a Customer Id</asp:Label>
             <asp:TextBox runat="server" ID="CustomerIdText" CssClass="form-control" />
         </div>
-        <asp:Button runat="server" Text="Search" OnClick="CustomerSearch_Click" CssClass="btn btn-default" />
+        <asp:Button runat="server" Text="Search" OnClick="CustomerSearch_Click" CssClass="btn btn-primary" />
     </div>
 
     <asp:Panel runat="server" ID="CustomerNotFoundPanel" Visible="false" CssClass="text-danger">
@@ -90,13 +96,27 @@
         </dl>
 
         <h5>Submitted Tickets</h5>
-        <asp:Repeater runat="server" ID="CustomerTicketsRepeater">
-            <HeaderTemplate><ul></HeaderTemplate>
-            <ItemTemplate>
-                <li><a href='<%# "TicketDetailView.aspx?id=" + Eval("Id") %>'>#<%# Eval("Id") %></a> - <%#: Eval("Description") %> (<%# Eval("State") %>)</li>
-            </ItemTemplate>
-            <FooterTemplate></ul></FooterTemplate>
-        </asp:Repeater>
+        <table class="table table-condensed table-fixed">
+            <colgroup>
+                <col width="60" />
+                <col />
+                <col width="120" />
+            </colgroup>
+            <asp:Repeater runat="server" ID="CustomerTicketsRepeater">
+                <HeaderTemplate>
+                    <thead><tr><th>Id</th><th>Description</th><th>Status</th></tr></thead>
+                    <tbody>
+                </HeaderTemplate>
+                <ItemTemplate>
+                    <tr>
+                        <td><a href='<%# "TicketDetailView.aspx?id=" + Eval("Id") %>'>#<%# Eval("Id") %></a></td>
+                        <td><%#: Eval("Description") %></td>
+                        <td><span class='label <%# MasterAntiqueRepair.UiHelpers.StatusLabelClass((MasterAntiqueRepair.State.RepairState)Eval("State")) %>'><%# Eval("State") %></span></td>
+                    </tr>
+                </ItemTemplate>
+                <FooterTemplate></tbody></FooterTemplate>
+            </asp:Repeater>
+        </table>
         <asp:Label runat="server" ID="NoCustomerTicketsLabel" Text="(none)" Visible="false" />
     </asp:Panel>
 
@@ -112,7 +132,7 @@
             <asp:Label runat="server" AssociatedControlID="EmployeeIdText">Or enter an Employee Id</asp:Label>
             <asp:TextBox runat="server" ID="EmployeeIdText" CssClass="form-control" />
         </div>
-        <asp:Button runat="server" Text="Search" OnClick="EmployeeSearch_Click" CssClass="btn btn-default" />
+        <asp:Button runat="server" Text="Search" OnClick="EmployeeSearch_Click" CssClass="btn btn-primary" />
     </div>
 
     <asp:Panel runat="server" ID="EmployeeNotFoundPanel" Visible="false" CssClass="text-danger">
@@ -129,13 +149,33 @@
         </dl>
 
         <h5>Assigned Tickets</h5>
-        <asp:Repeater runat="server" ID="EmployeeTicketsRepeater">
-            <HeaderTemplate><ul></HeaderTemplate>
-            <ItemTemplate>
-                <li><a href='<%# "TicketDetailView.aspx?id=" + Eval("Id") %>'>#<%# Eval("Id") %></a> - <%#: Eval("Description") %> (<%# Eval("State") %>)</li>
-            </ItemTemplate>
-            <FooterTemplate></ul></FooterTemplate>
-        </asp:Repeater>
+        <table class="table table-condensed table-fixed">
+            <colgroup>
+                <col width="60" />
+                <col />
+                <col width="120" />
+            </colgroup>
+            <asp:Repeater runat="server" ID="EmployeeTicketsRepeater">
+                <HeaderTemplate>
+                    <thead><tr><th>Id</th><th>Description</th><th>Status</th></tr></thead>
+                    <tbody>
+                </HeaderTemplate>
+                <ItemTemplate>
+                    <tr>
+                        <td><a href='<%# "TicketDetailView.aspx?id=" + Eval("Id") %>'>#<%# Eval("Id") %></a></td>
+                        <td><%#: Eval("Description") %></td>
+                        <td><span class='label <%# MasterAntiqueRepair.UiHelpers.StatusLabelClass((MasterAntiqueRepair.State.RepairState)Eval("State")) %>'><%# Eval("State") %></span></td>
+                    </tr>
+                </ItemTemplate>
+                <FooterTemplate></tbody></FooterTemplate>
+            </asp:Repeater>
+        </table>
         <asp:Label runat="server" ID="NoEmployeeTicketsLabel" Text="(none)" Visible="false" />
     </asp:Panel>
+
+    <script type="text/javascript">
+        $(function () {
+            $('[data-toggle="popover"]').popover();
+        });
+    </script>
 </asp:Content>

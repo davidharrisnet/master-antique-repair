@@ -47,3 +47,20 @@ textarea {
         padding: 0;
     }
 }
+
+/* Bootstrap's .table uses the browser's default table-layout: auto, which
+   sizes each column from that table's own content - so a colgroup width hint
+   alone doesn't guarantee the same column lines up the same way across
+   several independent tables (e.g. per-employee ticket lists) when their
+   content lengths differ. table-layout: fixed makes column widths purely a
+   function of the colgroup - content just wraps instead of resizing anything. */
+.table-fixed {
+    table-layout: fixed;
+}
+
+/* Marks truncated comment text that opens a Bootstrap popover with the full
+   text on click - a pointer cursor is the only thing this needs that a plain
+   <a> would otherwise give for free. */
+.popover-toggle {
+    cursor: pointer;
+}

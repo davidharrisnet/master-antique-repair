@@ -1,4 +1,4 @@
-<%@ Page Title="Audit Log" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeFile="AuditLogView.aspx.cs" Inherits="AuditLogView" %>
+<%@ Page Title="Audit Log" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeFile="AuditLogView.aspx.cs" Inherits="AuditLogView" MaintainScrollPositionOnPostBack="true" %>
 
 <asp:Content runat="server" ID="BodyContent" ContentPlaceHolderID="MainContent">
     <h2><%: Title %>.</h2>
@@ -8,7 +8,7 @@
             <asp:Label runat="server" AssociatedControlID="EntityIdSearchText">Entity Id</asp:Label>
             <asp:TextBox runat="server" ID="EntityIdSearchText" CssClass="form-control" />
         </div>
-        <asp:Button runat="server" Text="Search" OnClick="Search_Click" CssClass="btn btn-default" />
+        <asp:Button runat="server" Text="Search" OnClick="Search_Click" CssClass="btn btn-primary" />
         <asp:Button runat="server" Text="Clear" OnClick="ClearSearch_Click" CssClass="btn btn-link" />
 
         <div class="form-group" style="margin-left: 20px;">

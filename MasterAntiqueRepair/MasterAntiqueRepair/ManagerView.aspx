@@ -9,13 +9,25 @@
             <div class="panel panel-default">
                 <div class="panel-heading"><%#: Eval("Name") %></div>
                 <div class="panel-body">
-                    <asp:Repeater runat="server" ID="TicketsRepeater">
-                        <HeaderTemplate><ul></HeaderTemplate>
-                        <ItemTemplate>
-                            <li><%#: Eval("Description") %> (<%# Eval("State") %>)</li>
-                        </ItemTemplate>
-                        <FooterTemplate></ul></FooterTemplate>
-                    </asp:Repeater>
+                    <table class="table table-condensed table-fixed">
+                        <colgroup>
+                            <col />
+                            <col width="120" />
+                        </colgroup>
+                        <asp:Repeater runat="server" ID="TicketsRepeater">
+                            <HeaderTemplate>
+                                <thead><tr><th>Description</th><th>Status</th></tr></thead>
+                                <tbody>
+                            </HeaderTemplate>
+                            <ItemTemplate>
+                                <tr>
+                                    <td><%#: Eval("Description") %></td>
+                                    <td><span class='label <%# MasterAntiqueRepair.UiHelpers.StatusLabelClass((MasterAntiqueRepair.State.RepairState)Eval("State")) %>'><%# Eval("State") %></span></td>
+                                </tr>
+                            </ItemTemplate>
+                            <FooterTemplate></tbody></FooterTemplate>
+                        </asp:Repeater>
+                    </table>
                 </div>
             </div>
         </ItemTemplate>
@@ -37,13 +49,25 @@
             <div class="panel panel-default">
                 <div class="panel-heading"><%#: Eval("Key.Name") %></div>
                 <div class="panel-body">
-                    <asp:Repeater runat="server" ID="CustomerTicketsRepeater">
-                        <HeaderTemplate><ul></HeaderTemplate>
-                        <ItemTemplate>
-                            <li><%#: Eval("Description") %> (<%# Eval("State") %>)</li>
-                        </ItemTemplate>
-                        <FooterTemplate></ul></FooterTemplate>
-                    </asp:Repeater>
+                    <table class="table table-condensed table-fixed">
+                        <colgroup>
+                            <col />
+                            <col width="120" />
+                        </colgroup>
+                        <asp:Repeater runat="server" ID="CustomerTicketsRepeater">
+                            <HeaderTemplate>
+                                <thead><tr><th>Description</th><th>Status</th></tr></thead>
+                                <tbody>
+                            </HeaderTemplate>
+                            <ItemTemplate>
+                                <tr>
+                                    <td><%#: Eval("Description") %></td>
+                                    <td><span class='label <%# MasterAntiqueRepair.UiHelpers.StatusLabelClass((MasterAntiqueRepair.State.RepairState)Eval("State")) %>'><%# Eval("State") %></span></td>
+                                </tr>
+                            </ItemTemplate>
+                            <FooterTemplate></tbody></FooterTemplate>
+                        </asp:Repeater>
+                    </table>
                 </div>
             </div>
         </ItemTemplate>

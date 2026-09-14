@@ -272,7 +272,7 @@ public partial class TicketDetailView : Page
 
             TicketIdLiteral.Text = ticket.Id.ToString();
             DescriptionLiteral.Text = ticket.Description;
-            StateLiteral.Text = ticket.State.ToString();
+            StateLiteral.Text = "<span class=\"label " + UiHelpers.StatusLabelClass(ticket.State) + "\">" + ticket.State + "</span>";
 
             CustomerLiteral.Text = ticket.Customer != null
                 ? BuildPersonLink(ticket.Customer.Id, ticket.Customer.Name, "customerId")
