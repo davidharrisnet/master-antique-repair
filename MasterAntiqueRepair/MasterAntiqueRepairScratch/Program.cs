@@ -18,7 +18,8 @@ namespace MasterAntiqueRepairScratch
 
             // Rewrite anything below this line freely - it's just a scratch pad.
             // "DefaultConnection" is the real app's database; "TestConnection" is the
-            // separate scratch database TestDbContext/TestEF.aspx uses.
+            // separate scratch database TestDbContext uses (its own website page,
+            // TestEF.aspx, has been removed - TestDbContext is now unreferenced).
             using (var db = new RepairShopContext())
             {
                 var tickets = db.Tickets.OrderBy(o => o.Id).ToList();

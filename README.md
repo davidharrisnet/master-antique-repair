@@ -271,7 +271,7 @@ Because a Migrations configuration exists for it, EF6 automatically uses `Migrat
 
 ### `TestDbContext`
 
-A separate, scratch `DbContext` (`TestItem`, `User`, `Ticket` `DbSet`s) using its own `"TestConnection"` connection string and its own database. Exercised by the website's `TestEF.aspx` — a disconnected scratch page, not part of the main application flow, now gated to the `Manager` role (see [Security](#security)). Under its own EF6 Migrations configuration in `Migrations/` (the default location).
+A separate, scratch `DbContext` (`TestItem`, `User`, `Ticket` `DbSet`s) using its own `"TestConnection"` connection string and its own database, under its own EF6 Migrations configuration in `Migrations/` (the default location). Its own website-side consumer, `TestEF.aspx`, has been removed (see [Known limitations](#known-limitations)) — `TestDbContext`/`TestItem` are now unreferenced by the website entirely and exist only as leftover class-library code. Prefer `MasterAntiqueRepairScratch` for any new domain-model experiments.
 
 ### Running migrations
 
@@ -356,7 +356,6 @@ This app went through an explicit security review pass during development. This 
 **The fix — encode on output, not input**: the correct defense is encoding untrusted data at the point it's written into HTML, not trying to blacklist "dangerous" input (which is trivially bypassed — case variants, encoded payloads, non-`<script>` vectors like `<img onerror=...>`, etc.). Concretely:
 - Data-binding expressions changed from `<%# %>` to the encoding form `<%#: %>` (e.g. `<%#: Eval("Text") %>`) everywhere a bound value could contain attacker-controlled text — comment text and author names across `CustomerView.aspx`, `EmployeeView.aspx`, `ManagerView.aspx`, and `TicketDetailView.aspx`.
 - `asp:Literal` controls set from code-behind got `Mode="Encode"` (`TicketDetailView.aspx`'s ticket-field literals, `Register.aspx`'s `SuccessMessage`, `SubmitRepair.aspx`'s `ErrorMessage`).
-- `TestEF.aspx.cs` (see [Known limitations](#known-limitations)) wraps its `asp:Label` assignments in `HttpUtility.HtmlEncode(...)` — defensive, since today's values there are hardcoded literals, not actual user input, but the pattern itself was unsafe.
 - Fields that are never rendered as HTML at all (JS string arguments like the "Mark Complete" modal's description) already went through `HttpUtility.JavaScriptStringEncode` for that context, and setting them via `.innerText` (not `.innerHTML`) client-side avoids re-introducing the same class of bug there.
 
 **What this doesn't protect against**: nothing here — output encoding is a complete fix for this specific bug once applied everywhere untrusted data is written into HTML. The residual risk is only "did we miss a spot," which is why this was swept across every view, not just the one first reported.
@@ -379,7 +378,7 @@ Not a live risk in this codebase: every data access goes through EF6/LINQ-to-Ent
 Every mutating action re-validates ownership **server-side**, independent of what the UI shows or what the client sends:
 - `User.EditComment`/`DeleteComment` throw `InvalidOperationException` unless `comment.UserId == Id` — a user can only ever edit or delete their own comments, even if they somehow submit another comment's id.
 - Ticket queries in code-behind are always scoped to the acting user: `EmployeeView`'s complete/comment actions filter by `t.User.Id == employeeId`; `CustomerView`'s filter by `t.Customer.Id == customerId`. An employee can't complete a ticket assigned to someone else by guessing its id, and a customer can't comment on someone else's ticket the same way.
-- Every page gates on role via `RepairAuthHelper.RequireRole` as the first statement in `Page_Load`, before any data access — `Manager`-only pages (`ManagerView`, `AuditLogView`, `TicketDetailView`, `Account/Register`, and now `TestEF`) reject anyone else.
+- Every page gates on role via `RepairAuthHelper.RequireRole` as the first statement in `Page_Load`, before any data access — `Manager`-only pages (`ManagerView`, `AuditLogView`, `TicketDetailView`, `Account/Register`) reject anyone else.
 
 ### Cross-Site Request Forgery (CSRF) vs. XSS — and why `confirm()` isn't a security control
 
@@ -408,7 +407,8 @@ It does **not** protect against a script already running on this app's own pages
 - **Username enumeration**: `Account/Register.aspx` and `Account/CustomerSignUp.aspx` say "That username is already taken," which confirms a given username exists. Usernames in this app are not secrets — they're already visible throughout (Manager's employee/customer lists, the Audit Log's User column), so this doesn't introduce meaningfully new exposure. Fixing it "properly" (generic error + email-based confirmation) would mean redesigning signup around email verification, which is out of scope for this app's model.
 - **No IP-based throttling on login or signup**: the lockout above is per-account. A distributed attacker guessing many different usernames (rather than brute-forcing one account) isn't slowed down by it. Per-IP or global rate limiting would need infrastructure this app doesn't have (no reverse proxy/WAF layer assumed).
 - **No password reset / account recovery flow**: not a vulnerability by itself, but it means a locked-out or forgotten-password account has no self-service path — a Manager (or direct DB access) is currently the only way to unblock one.
-- **`TestEF.aspx`/`TestDbContext`**: now gated to the `Manager` role and its output HTML-encoded (see above), but it's still the disconnected scratch pad described in [Known limitations](#known-limitations) below — reseeds fixed data into a separate database on every load. Recommend deleting it entirely before this app is ever deployed anywhere it could get real traffic.
+- **`TestDbContext`/`TestItem`**: `TestEF.aspx`, their only website-side consumer, has been deleted (see [Known limitations](#known-limitations)). These class-library types are now fully unreferenced by the website; they're harmless leftover code, not a live attack surface, but a candidate for removal along with their `Migrations/` (default-location) configuration and the scratch `MasterAntiqueRepairTest` database.
+- **Bad/unknown URLs**: extensionless requests IIS resolves natively before ASP.NET routing ever sees them (e.g. a path with no matching route or file) are redirected to Home via `Web.config`'s `<httpErrors>` (`404` → `responseMode="Redirect"` to `/`). Requests that *do* reach the ASP.NET pipeline and throw a 404 (`HttpException`) are caught the same way via `Global.asax`'s `Application_Error`. Together these cover both paths a "page not found" can take through this stack.
 - **No HTTPS enforcement**: nothing in this app forces the connection itself onto HTTPS (no `RequireHttps` filter/redirect). `CookieSecure = SameAsRequest` adapts correctly *if* the site is served over HTTPS, but nothing here makes that happen — it's a hosting/IIS-configuration concern for whenever (if ever) this leaves localhost.
 
 ### Migrations introduced by this section
@@ -422,7 +422,7 @@ Update-Database -ConfigurationTypeName MasterAntiqueRepairData.Migrations.Repair
 
 ## Known limitations
 
-- **`TestDbContext`/`TestEF.aspx`** are a separate, disconnected scratch pad, not guaranteed to stay in sync with the rest of the app as the domain model evolves. Prefer `MasterAntiqueRepairScratch` for new experiments.
+- **`TestDbContext`/`TestItem`** (`MasterAntiqueRepairData/App_Code/`) were a separate, disconnected scratch pad's data layer, never guaranteed to stay in sync with the rest of the app as the domain model evolves — and it didn't: shared changes to `User`/`Ticket` this project made along the way left `TestDbContext`'s model out of sync with its own migration history, and its one website-side consumer, `TestEF.aspx`, has since been deleted rather than fixed. The class-library types themselves are still present but fully unreferenced. Prefer `MasterAntiqueRepairScratch` for any new domain-model experiments.
 
 ## Project goals
 
