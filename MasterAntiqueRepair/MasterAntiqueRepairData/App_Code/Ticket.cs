@@ -13,7 +13,6 @@ namespace MasterAntiqueRepair
         public Customer Customer { get; set; }
         public State.RepairState State { get; set; }
         public String Description { get; set; }
-        public String Comment { get; set; }
         public DateTime? SubmittedDate { get; set; }
         public DateTime? AssignedDate { get; set; }
         public DateTime? CompletedDate { get; set; }

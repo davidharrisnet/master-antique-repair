@@ -18,8 +18,12 @@ namespace MasterAntiqueRepair
         public void CompleteTicket(Ticket ticket, string comment)
         {
             ticket.State = State.RepairState.COMPLETED;
-            ticket.Comment = comment;
             ticket.CompletedDate = DateTime.Now;
+
+            if (!string.IsNullOrWhiteSpace(comment))
+            {
+                AddComment(ticket, comment);
+            }
         }
     }
 

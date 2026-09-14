@@ -29,7 +29,6 @@
             <asp:BoundField DataField="CompletedDate" HeaderText="Completed" DataFormatString="{0:g}" />
             <asp:TemplateField HeaderText="Employee Comments">
                 <ItemTemplate>
-                    <%# Eval("Comment") %>
                     <asp:Repeater runat="server" ID="EmployeeCommentsRepeater">
                         <HeaderTemplate><ul></HeaderTemplate>
                         <ItemTemplate>
