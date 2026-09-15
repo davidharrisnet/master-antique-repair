@@ -216,6 +216,7 @@
 
     <table class="table table-condensed table-fixed">
         <colgroup>
+            <col width="110" />
             <col />
             <col width="140" />
             <col width="160" />
@@ -223,23 +224,24 @@
         </colgroup>
         <asp:Repeater runat="server" ID="CommentSearchRepeater">
             <HeaderTemplate>
-                <thead><tr><th>Comment</th><th>Author</th><th>Posted</th><th>Ticket</th></tr></thead>
+                <thead><tr><th>Type</th><th>Text</th><th>Author</th><th>Posted</th><th>Ticket</th></tr></thead>
                 <tbody>
             </HeaderTemplate>
             <ItemTemplate>
                 <tr>
+                    <td><%#: Eval("Type") %></td>
                     <td>
                         <span class="popover-toggle" tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-content='<%#: Eval("Text") %>'><%#: MasterAntiqueRepair.UiHelpers.Truncate(Eval("Text").ToString(), 80) %></span>
                     </td>
-                    <td><%#: Eval("User.Name") %></td>
-                    <td><%# Eval("CreatedAt", "{0:g}") %></td>
+                    <td><%#: Eval("AuthorName") %></td>
+                    <td><%# Eval("Posted", "{0:g}") %></td>
                     <td><a href='<%# "TicketDetailView.aspx?id=" + Eval("TicketId") %>'>#<%# Eval("TicketId") %></a></td>
                 </tr>
             </ItemTemplate>
             <FooterTemplate></tbody></FooterTemplate>
         </asp:Repeater>
     </table>
-    <asp:Label runat="server" ID="NoCommentsFoundLabel" Text="No matching comments found." Visible="false" />
+    <asp:Label runat="server" ID="NoCommentsFoundLabel" Text="No matching comments or ticket descriptions found." Visible="false" />
         </ContentTemplate>
     </asp:UpdatePanel>
     </div>

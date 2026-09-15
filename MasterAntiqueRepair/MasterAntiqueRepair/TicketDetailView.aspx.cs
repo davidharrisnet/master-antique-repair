@@ -337,6 +337,15 @@ public partial class TicketDetailView : Page
         }
     }
 
+    private class CommentSearchResult
+    {
+        public string Type { get; set; }
+        public string Text { get; set; }
+        public string AuthorName { get; set; }
+        public DateTime Posted { get; set; }
+        public int TicketId { get; set; }
+    }
+
     protected void CommentSearch_Click(object sender, EventArgs e)
     {
         var searchText = CommentSearchText.Text.Trim();
@@ -354,15 +363,40 @@ public partial class TicketDetailView : Page
 
         using (var db = new RepairShopContext())
         {
-            var comments = db.Comments
+            var commentMatches = db.Comments
                 .Include(c => c.User)
                 .Where(c => c.Text.Contains(searchText))
-                .OrderByDescending(c => c.CreatedAt)
+                .ToList()
+                .Select(c => new CommentSearchResult
+                {
+                    Type = "Comment",
+                    Text = c.Text,
+                    AuthorName = c.User.Name,
+                    Posted = c.CreatedAt,
+                    TicketId = c.TicketId
+                });
+
+            var descriptionMatches = db.Tickets
+                .Include(t => t.Customer)
+                .Where(t => t.Description.Contains(searchText))
+                .ToList()
+                .Select(t => new CommentSearchResult
+                {
+                    Type = "Ticket Description",
+                    Text = t.Description,
+                    AuthorName = t.Customer.Name,
+                    Posted = t.SubmittedDate ?? DateTime.MinValue,
+                    TicketId = t.Id
+                });
+
+            var results = commentMatches
+                .Concat(descriptionMatches)
+                .OrderByDescending(r => r.Posted)
                 .ToList();
 
-            CommentSearchRepeater.DataSource = comments;
+            CommentSearchRepeater.DataSource = results;
             CommentSearchRepeater.DataBind();
-            NoCommentsFoundLabel.Visible = comments.Count == 0;
+            NoCommentsFoundLabel.Visible = results.Count == 0;
         }
     }
 }
