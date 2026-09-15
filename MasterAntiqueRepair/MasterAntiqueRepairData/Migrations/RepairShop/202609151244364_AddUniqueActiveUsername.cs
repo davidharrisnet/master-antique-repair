@@ -7,6 +7,13 @@
     {
         public override void Up()
         {
+            // Name was created as nvarchar(max) (InitialCreate's plain c.String()), which SQL
+            // Server refuses to use as an index key column -- must narrow it first. 256 is
+            // generous for a login name and doesn't touch the C# model/DataAnnotations, so it
+            // doesn't affect EF6's model hash used by the "pending model changes" check;
+            // nullability unchanged (still NULL) to match the original column exactly.
+            Sql("ALTER TABLE dbo.Users ALTER COLUMN Name nvarchar(256) NULL;");
+
             // Filtered, not a plain unique constraint - only active (DeletedAt IS NULL)
             // rows are checked, so a soft-deleted user's old username stays reusable by a
             // new account, matching the app-level rule already enforced in code. Closes
@@ -20,6 +27,7 @@
         public override void Down()
         {
             Sql("DROP INDEX IX_Users_Name_Active ON dbo.Users;");
+            Sql("ALTER TABLE dbo.Users ALTER COLUMN Name nvarchar(max) NULL;");
         }
     }
 }
