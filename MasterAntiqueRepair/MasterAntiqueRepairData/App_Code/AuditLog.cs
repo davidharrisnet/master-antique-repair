@@ -15,7 +15,9 @@ namespace MasterAntiqueRepair
             EditComment,
             DeleteComment,
             RequestPasswordReset,
-            ResetPassword
+            ResetPassword,
+            EditUser,
+            DeleteUser
         }
 
         public enum EntityKind

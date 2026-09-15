@@ -90,6 +90,10 @@
     <Compile Include="Migrations\RepairShop\202609141905359_AddPasswordResetTokens.designer.cs">
       <DependentUpon>202609141905359_AddPasswordResetTokens.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\RepairShop\202609151114520_AddUserDeletedAt.cs" />
+    <Compile Include="Migrations\RepairShop\202609151114520_AddUserDeletedAt.designer.cs">
+      <DependentUpon>202609151114520_AddUserDeletedAt.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\RepairShop\Configuration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="App_Code\Ticket.cs" />
@@ -120,6 +124,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\RepairShop\202609141905359_AddPasswordResetTokens.resx">
       <DependentUpon>202609141905359_AddPasswordResetTokens.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\RepairShop\202609151114520_AddUserDeletedAt.resx">
+      <DependentUpon>202609151114520_AddUserDeletedAt.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

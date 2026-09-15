@@ -32,6 +32,14 @@ public partial class Account_Login : Page
                 {
                     var user = db.Users.FirstOrDefault(u => u.Name == UserName.Text);
 
+                    if (user != null && user.IsDeleted)
+                    {
+                        IpThrottle.RecordAttempt("login", ip);
+                        FailureText.Text = "Invalid username or password.";
+                        ErrorMessage.Visible = true;
+                        return;
+                    }
+
                     if (user != null && user.IsLockedOut())
                     {
                         IpThrottle.RecordAttempt("login", ip);

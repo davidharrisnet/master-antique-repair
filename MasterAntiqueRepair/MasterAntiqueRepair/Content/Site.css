@@ -64,3 +64,34 @@ textarea {
 .popover-toggle {
     cursor: pointer;
 }
+
+/* Bootstrap 3 has no built-in styling hook for "show accordion state" the way
+   Bootstrap 5's .accordion-button does, so this resets the plain <button> (used
+   instead of an <a> - the Bootstrap 3 docs' own collapse example, and simpler
+   than juggling an anchor with no href) to read as a clickable heading rather
+   than a boxed button. Flexbox (not float/pull-right) positions the chevron -
+   float is unreliable inside <button> elements across browsers, which is why
+   an earlier pull-right attempt didn't visually move it. The rotation itself
+   is keyed directly off aria-expanded, which bootstrap.js's show()/hide() set
+   on this exact trigger unconditionally (confirmed in Scripts/bootstrap.js) -
+   pure CSS, no custom JS/event-binding needed at all. */
+.panel-title-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: none;
+    text-align: left;
+    font: inherit;
+    color: inherit;
+}
+
+.panel-title-toggle .glyphicon-chevron-down {
+    transition: transform 0.2s ease-in-out;
+}
+
+.panel-title-toggle[aria-expanded="true"] .glyphicon-chevron-down {
+    transform: rotate(180deg);
+}

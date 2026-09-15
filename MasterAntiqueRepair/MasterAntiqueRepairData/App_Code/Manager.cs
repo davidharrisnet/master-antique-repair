@@ -8,7 +8,7 @@ namespace MasterAntiqueRepair
     {
         public List<Employee> GetEmployeesWithTickets(DbContext db)
         {
-            return db.Set<Employee>().ToList();
+            return db.Set<Employee>().Where(emp => !emp.DeletedAt.HasValue).ToList();
         }
 
         public Dictionary<Customer, List<Ticket>> GetCustomersWithTickets(DbContext db)

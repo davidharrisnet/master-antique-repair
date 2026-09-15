@@ -25,6 +25,17 @@ namespace MasterAntiqueRepair
         public string PasswordHash { get; set; }
         public int FailedLoginAttempts { get; set; }
         public DateTime? LockedOutUntil { get; set; }
+        public DateTime? DeletedAt { get; set; }
+
+        public bool IsDeleted
+        {
+            get { return DeletedAt.HasValue; }
+        }
+
+        public void Delete()
+        {
+            DeletedAt = DateTime.Now;
+        }
 
         public void SetPassword(string password)
         {

@@ -22,7 +22,7 @@ public partial class Account_Register : Page
 
         using (var db = new RepairShopContext())
         {
-            if (db.Users.Any(u => u.Name == UserName.Text))
+            if (db.Users.Any(u => u.Name == UserName.Text && !u.DeletedAt.HasValue))
             {
                 ErrorMessage.Text = "That username is already taken.";
                 return;

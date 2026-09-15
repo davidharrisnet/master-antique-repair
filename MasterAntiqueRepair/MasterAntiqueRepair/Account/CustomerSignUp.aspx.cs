@@ -16,7 +16,7 @@ public partial class Account_CustomerSignUp : Page
 
         using (var db = new RepairShopContext())
         {
-            if (db.Users.Any(u => u.Name == UserName.Text))
+            if (db.Users.Any(u => u.Name == UserName.Text && !u.DeletedAt.HasValue))
             {
                 // Rate-limited (not message-obscured): usernames in this app aren't secret
                 // (they're already visible in Manager views and the Audit Log), so the
