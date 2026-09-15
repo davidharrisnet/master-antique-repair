@@ -1,7 +1,7 @@
-<%@ Page Title="Employees" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeFile="ManagerView.aspx.cs" Inherits="ManagerView" %>
+<%@ Page Title="Administration" Language="C#" MasterPageFile="~/Site.Master" AutoEventWireup="true" CodeFile="ManagerView.aspx.cs" Inherits="ManagerView" %>
 
 <asp:Content runat="server" ID="BodyContent" ContentPlaceHolderID="MainContent">
-    <h2>Employees</h2>
+    <h2>Administration</h2>
 
     <div class="panel panel-default">
         <div class="panel-heading" id="employeeManagementHeading">
@@ -14,6 +14,8 @@
         </div>
         <div id="employeeManagementBody" class="panel-collapse collapse" aria-labelledby="employeeManagementHeading">
         <div class="panel-body">
+        <asp:UpdatePanel runat="server" ID="EmployeeManagementUpdatePanel" UpdateMode="Always">
+            <ContentTemplate>
             <div class="row">
                 <div class="col-md-6">
                     <h4>Add New Employee</h4>
@@ -86,10 +88,103 @@
                     </div>
                 </div>
             </div>
+            </ContentTemplate>
+        </asp:UpdatePanel>
         </div>
         </div>
     </div>
-   
+
+    <div class="panel panel-default">
+        <div class="panel-heading" id="customerManagementHeading">
+            <h4 class="panel-title">
+                <button type="button" class="panel-title-toggle" data-toggle="collapse" data-target="#customerManagementBody" aria-expanded="false" aria-controls="customerManagementBody">
+                    <span>Customer Management</span>
+                    <span class="glyphicon glyphicon-chevron-down"></span>
+                </button>
+            </h4>
+        </div>
+        <div id="customerManagementBody" class="panel-collapse collapse" aria-labelledby="customerManagementHeading">
+        <div class="panel-body">
+        <asp:UpdatePanel runat="server" ID="CustomerManagementUpdatePanel" UpdateMode="Always">
+            <ContentTemplate>
+            <div class="row">
+                <div class="col-md-6">
+                    <h4>Add New Customer</h4>
+                    <p class="text-danger"><asp:Literal runat="server" ID="AddCustomerErrorMessage" /></p>
+                    <p class="text-success"><asp:Literal runat="server" ID="AddCustomerSuccessMessage" Mode="Encode" /></p>
+                    <div class="form-horizontal">
+                        <div class="form-group">
+                            <asp:Label runat="server" AssociatedControlID="NewCustomerUserName" CssClass="col-md-4 control-label">User name</asp:Label>
+                            <div class="col-md-8">
+                                <asp:TextBox runat="server" ID="NewCustomerUserName" CssClass="form-control" autocomplete="username" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <asp:Label runat="server" AssociatedControlID="NewCustomerPassword" CssClass="col-md-4 control-label">Password</asp:Label>
+                            <div class="col-md-8">
+                                <asp:TextBox runat="server" ID="NewCustomerPassword" TextMode="Password" CssClass="form-control" autocomplete="new-password" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <asp:Label runat="server" AssociatedControlID="NewCustomerConfirmPassword" CssClass="col-md-4 control-label">Confirm password</asp:Label>
+                            <div class="col-md-8">
+                                <asp:TextBox runat="server" ID="NewCustomerConfirmPassword" TextMode="Password" CssClass="form-control" autocomplete="new-password" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-offset-4 col-md-8">
+                                <asp:Button runat="server" OnClick="AddCustomer_Click" Text="Add Customer" CssClass="btn btn-primary" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <h4>Edit Customer</h4>
+                    <p class="text-danger"><asp:Literal runat="server" ID="EditCustomerErrorMessage" /></p>
+                    <p class="text-success"><asp:Literal runat="server" ID="EditCustomerSuccessMessage" Mode="Encode" /></p>
+                    <div class="form-horizontal">
+                        <div class="form-group">
+                            <asp:Label runat="server" AssociatedControlID="EditCustomerDropDown" CssClass="col-md-4 control-label">Customer</asp:Label>
+                            <div class="col-md-8">
+                                <asp:DropDownList runat="server" ID="EditCustomerDropDown" AutoPostBack="true" OnSelectedIndexChanged="EditCustomerDropDown_SelectedIndexChanged" CssClass="form-control" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <asp:Label runat="server" AssociatedControlID="EditCustomerUserName" CssClass="col-md-4 control-label">User name</asp:Label>
+                            <div class="col-md-8">
+                                <asp:TextBox runat="server" ID="EditCustomerUserName" CssClass="form-control" autocomplete="username" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <asp:Label runat="server" AssociatedControlID="EditCustomerNewPassword" CssClass="col-md-4 control-label">New password</asp:Label>
+                            <div class="col-md-8">
+                                <asp:TextBox runat="server" ID="EditCustomerNewPassword" TextMode="Password" CssClass="form-control" autocomplete="new-password" />
+                                <span class="help-block">Leave blank to keep the current password.</span>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <asp:Label runat="server" AssociatedControlID="EditCustomerConfirmPassword" CssClass="col-md-4 control-label">Confirm new password</asp:Label>
+                            <div class="col-md-8">
+                                <asp:TextBox runat="server" ID="EditCustomerConfirmPassword" TextMode="Password" CssClass="form-control" autocomplete="new-password" />
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <div class="col-md-offset-4 col-md-8">
+                                <asp:Button runat="server" OnClick="SaveCustomer_Click" Text="Save Changes" CssClass="btn btn-primary" />
+                                <asp:Button runat="server" OnClick="DeleteCustomer_Click" Text="Delete Customer" CssClass="btn btn-danger"
+                                    OnClientClick="return confirm('Are you sure? This customer will no longer be able to log in, but their existing tickets, comments, and history are kept.');" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            </ContentTemplate>
+        </asp:UpdatePanel>
+        </div>
+        </div>
+    </div>
+
     <div class="form-group">
         <asp:Label runat="server" AssociatedControlID="ViewEmployeeDropDown">Choose an employee to view</asp:Label>
         <asp:DropDownList runat="server" ID="ViewEmployeeDropDown" AutoPostBack="true" OnSelectedIndexChanged="ViewEmployeeDropDown_SelectedIndexChanged" CssClass="form-control" />

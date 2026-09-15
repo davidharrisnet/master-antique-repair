@@ -1,10 +1,20 @@
 using System;
+using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Web.UI;
 using MasterAntiqueRepair;
 
 public partial class Account_CustomerSignUp : Page
 {
+    // Same race-condition backstop as ManagerView's Add/Edit handlers - the check
+    // above is still a check-then-write, so this catches the database's own unique
+    // index rejecting a duplicate that slipped past it.
+    private static bool IsDuplicateUsernameViolation(DbUpdateException ex)
+    {
+        var sqlEx = ex.GetBaseException() as System.Data.SqlClient.SqlException;
+        return sqlEx != null && (sqlEx.Number == 2601 || sqlEx.Number == 2627);
+    }
+
     protected void SignUp_Click(object sender, EventArgs e)
     {
         var ip = Request.UserHostAddress;
@@ -44,7 +54,17 @@ public partial class Account_CustomerSignUp : Page
             }
 
             db.Users.Add(customer);
-            db.SaveChanges();
+
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (DbUpdateException ex) when (IsDuplicateUsernameViolation(ex))
+            {
+                IpThrottle.RecordAttempt("signup", ip);
+                ErrorMessage.Text = "That username is already taken.";
+                return;
+            }
 
             AuditLogger.Log(db, customer, AuditLog.ActionType.CreateUser, AuditLog.EntityKind.User, customer.Id);
             db.SaveChanges();

@@ -37,16 +37,22 @@ namespace MasterAntiqueRepair
             DeletedAt = DateTime.Now;
         }
 
+        private const string PasswordRulesMessage = "Passwords must have 8 to 128 characters and one or more letters, digits, and special characters.";
+
         public void SetPassword(string password)
         {
-            if (string.IsNullOrEmpty(password) || password.Length < MinPasswordLength)
+            bool isValid = !string.IsNullOrEmpty(password)
+                && password.Length >= MinPasswordLength
+                && password.Length <= MaxPasswordLength
+                && password.Any(char.IsLetter)
+                && password.Any(char.IsDigit)
+                && password.Any(c => !char.IsLetterOrDigit(c));
+
+            if (!isValid)
             {
-                throw new ArgumentException("Password must be at least " + MinPasswordLength + " characters.");
+                throw new ArgumentException(PasswordRulesMessage);
             }
-            if (password.Length > MaxPasswordLength)
-            {
-                throw new ArgumentException("Password cannot exceed " + MaxPasswordLength + " characters.");
-            }
+
             PasswordHash = PasswordHasher.HashPassword(password);
         }
 

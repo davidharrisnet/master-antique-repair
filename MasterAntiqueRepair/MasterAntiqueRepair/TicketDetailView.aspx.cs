@@ -73,10 +73,12 @@ public partial class TicketDetailView : Page
         TicketSearchTabItem.Attributes["class"] = tab == "ticket" ? "active" : "";
         CustomerSearchTabItem.Attributes["class"] = tab == "customer" ? "active" : "";
         EmployeeSearchTabItem.Attributes["class"] = tab == "employee" ? "active" : "";
+        CommentSearchTabItem.Attributes["class"] = tab == "comment" ? "active" : "";
 
         TicketSearchPane.Attributes["class"] = "tab-pane" + (tab == "ticket" ? " active" : "");
         CustomerSearchPane.Attributes["class"] = "tab-pane" + (tab == "customer" ? " active" : "");
         EmployeeSearchPane.Attributes["class"] = "tab-pane" + (tab == "employee" ? " active" : "");
+        CommentSearchPane.Attributes["class"] = "tab-pane" + (tab == "comment" ? " active" : "");
     }
 
     private static string BuildPersonLink(int id, string name, string queryParam)
@@ -332,6 +334,35 @@ public partial class TicketDetailView : Page
             CustomerCommentsRepeater.DataSource = customerComments;
             CustomerCommentsRepeater.DataBind();
             NoCustomerCommentsLabel.Visible = customerComments.Count == 0;
+        }
+    }
+
+    protected void CommentSearch_Click(object sender, EventArgs e)
+    {
+        var searchText = CommentSearchText.Text.Trim();
+        if (string.IsNullOrEmpty(searchText))
+        {
+            CommentSearchErrorPanel.Visible = true;
+            CommentSearchErrorLiteral.Text = "Enter some text to search for.";
+            CommentSearchRepeater.DataSource = null;
+            CommentSearchRepeater.DataBind();
+            NoCommentsFoundLabel.Visible = false;
+            return;
+        }
+
+        CommentSearchErrorPanel.Visible = false;
+
+        using (var db = new RepairShopContext())
+        {
+            var comments = db.Comments
+                .Include(c => c.User)
+                .Where(c => c.Text.Contains(searchText))
+                .OrderByDescending(c => c.CreatedAt)
+                .ToList();
+
+            CommentSearchRepeater.DataSource = comments;
+            CommentSearchRepeater.DataBind();
+            NoCommentsFoundLabel.Visible = comments.Count == 0;
         }
     }
 }

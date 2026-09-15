@@ -51,7 +51,7 @@
                     <ul class="nav navbar-nav">
                         <li runat="server" id="CustomerViewListItem" visible="false"><a runat="server" href="~/CustomerView">My Repairs</a></li>
                         <li runat="server" id="EmployeeViewListItem" visible="false"><a runat="server" href="~/EmployeeView">My Tickets</a></li>
-                        <li runat="server" id="ManagerViewListItem" visible="false"><a runat="server" href="~/ManagerView">Employees</a></li>
+                        <li runat="server" id="ManagerViewListItem" visible="false"><a runat="server" href="~/ManagerView">Administration</a></li>
                         <li runat="server" id="AuditLogViewListItem" visible="false"><a runat="server" href="~/AuditLogView">Audit Log</a></li>
                         <li runat="server" id="TicketDetailViewListItem" visible="false"><a runat="server" href="~/TicketDetailView">Search</a></li>
                         <li runat="server" id="MetricsListItem" visible="false"><a runat="server" href="~/Metrics">Metrics</a></li>

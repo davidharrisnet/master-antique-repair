@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -8,6 +9,17 @@ using MasterAntiqueRepair;
 
 public partial class ManagerView : Page
 {
+    // The application-level "is this name already taken?" check (used everywhere
+    // below) can still lose a race between two near-simultaneous requests - it's a
+    // check-then-write, not atomic. The database's own unique index on active
+    // usernames is the real backstop; this just turns the resulting DbUpdateException
+    // into the same friendly message instead of an unhandled 500.
+    private static bool IsDuplicateUsernameViolation(DbUpdateException ex)
+    {
+        var sqlEx = ex.GetBaseException() as System.Data.SqlClient.SqlException;
+        return sqlEx != null && (sqlEx.Number == 2601 || sqlEx.Number == 2627);
+    }
+
     protected void Page_Load(object sender, EventArgs e)
     {
         if (!RepairAuthHelper.RequireRole(Response, "Manager"))
@@ -28,6 +40,7 @@ public partial class ManagerView : Page
 
                 BindEditEmployeeDropDown(db);
                 BindViewEmployeeDropDown(db);
+                BindEditCustomerDropDown(db);
             }
         }
     }
@@ -130,7 +143,16 @@ public partial class ManagerView : Page
             }
 
             db.Users.Add(employee);
-            db.SaveChanges();
+
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (DbUpdateException ex) when (IsDuplicateUsernameViolation(ex))
+            {
+                AddEmployeeErrorMessage.Text = "That username is already taken.";
+                return;
+            }
 
             var managerId = RepairAuthHelper.GetCurrentUserId();
             var manager = db.Users.OfType<Manager>().FirstOrDefault(m => m.Id == managerId);
@@ -223,7 +245,15 @@ public partial class ManagerView : Page
                 }
             }
 
-            db.SaveChanges();
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (DbUpdateException ex) when (IsDuplicateUsernameViolation(ex))
+            {
+                EditEmployeeErrorMessage.Text = "That username is already taken.";
+                return;
+            }
 
             var managerId = RepairAuthHelper.GetCurrentUserId();
             var manager = db.Users.OfType<Manager>().FirstOrDefault(m => m.Id == managerId);
@@ -283,6 +313,229 @@ public partial class ManagerView : Page
             EditEmployeeConfirmPassword.Text = string.Empty;
 
             RefreshEmployeeViews(db);
+        }
+    }
+
+    private void BindEditCustomerDropDown(RepairShopContext db)
+    {
+        var customers = db.Users.OfType<Customer>().Where(c => !c.DeletedAt.HasValue).OrderBy(c => c.Name).ToList();
+
+        EditCustomerDropDown.Items.Clear();
+        EditCustomerDropDown.Items.Add(new ListItem("-- Select a customer --", ""));
+        foreach (var customer in customers)
+        {
+            EditCustomerDropDown.Items.Add(new ListItem(customer.Name, customer.Id.ToString()));
+        }
+    }
+
+    protected void AddCustomer_Click(object sender, EventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(NewCustomerUserName.Text))
+        {
+            AddCustomerErrorMessage.Text = "The user name field is required.";
+            return;
+        }
+
+        if (NewCustomerPassword.Text != NewCustomerConfirmPassword.Text)
+        {
+            AddCustomerErrorMessage.Text = "The password and confirmation password do not match.";
+            return;
+        }
+
+        using (var db = new RepairShopContext())
+        {
+            if (db.Users.Any(u => u.Name == NewCustomerUserName.Text && !u.DeletedAt.HasValue))
+            {
+                AddCustomerErrorMessage.Text = "That username is already taken.";
+                return;
+            }
+
+            var customer = new Customer
+            {
+                Name = NewCustomerUserName.Text,
+                CreatedAt = DateTime.Now
+            };
+
+            try
+            {
+                customer.SetPassword(NewCustomerPassword.Text);
+            }
+            catch (ArgumentException ex)
+            {
+                AddCustomerErrorMessage.Text = ex.Message;
+                return;
+            }
+
+            db.Users.Add(customer);
+
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (DbUpdateException ex) when (IsDuplicateUsernameViolation(ex))
+            {
+                AddCustomerErrorMessage.Text = "That username is already taken.";
+                return;
+            }
+
+            var managerId = RepairAuthHelper.GetCurrentUserId();
+            var manager = db.Users.OfType<Manager>().FirstOrDefault(m => m.Id == managerId);
+            if (manager != null)
+            {
+                AuditLogger.Log(db, manager, AuditLog.ActionType.CreateUser, AuditLog.EntityKind.User, customer.Id);
+                db.SaveChanges();
+            }
+
+            AddCustomerErrorMessage.Text = string.Empty;
+            AddCustomerSuccessMessage.Text = "Customer account created for " + customer.Name + ".";
+            NewCustomerUserName.Text = string.Empty;
+            NewCustomerPassword.Text = string.Empty;
+            NewCustomerConfirmPassword.Text = string.Empty;
+
+            BindEditCustomerDropDown(db);
+        }
+    }
+
+    protected void EditCustomerDropDown_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        EditCustomerErrorMessage.Text = string.Empty;
+        EditCustomerSuccessMessage.Text = string.Empty;
+        EditCustomerNewPassword.Text = string.Empty;
+        EditCustomerConfirmPassword.Text = string.Empty;
+
+        int id;
+        if (!int.TryParse(EditCustomerDropDown.SelectedValue, out id))
+        {
+            EditCustomerUserName.Text = string.Empty;
+            return;
+        }
+
+        using (var db = new RepairShopContext())
+        {
+            var customer = db.Users.OfType<Customer>().FirstOrDefault(c => c.Id == id);
+            EditCustomerUserName.Text = customer != null ? customer.Name : string.Empty;
+        }
+    }
+
+    protected void SaveCustomer_Click(object sender, EventArgs e)
+    {
+        int id;
+        if (!int.TryParse(EditCustomerDropDown.SelectedValue, out id))
+        {
+            EditCustomerErrorMessage.Text = "Choose a customer first.";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(EditCustomerUserName.Text))
+        {
+            EditCustomerErrorMessage.Text = "The user name field is required.";
+            return;
+        }
+
+        if (EditCustomerNewPassword.Text != EditCustomerConfirmPassword.Text)
+        {
+            EditCustomerErrorMessage.Text = "The password and confirmation password do not match.";
+            return;
+        }
+
+        using (var db = new RepairShopContext())
+        {
+            var customer = db.Users.OfType<Customer>().FirstOrDefault(c => c.Id == id);
+            if (customer == null)
+            {
+                EditCustomerErrorMessage.Text = "That customer no longer exists.";
+                BindEditCustomerDropDown(db);
+                return;
+            }
+
+            if (db.Users.Any(u => u.Name == EditCustomerUserName.Text && u.Id != customer.Id && !u.DeletedAt.HasValue))
+            {
+                EditCustomerErrorMessage.Text = "That username is already taken.";
+                return;
+            }
+
+            customer.Name = EditCustomerUserName.Text;
+
+            if (!string.IsNullOrEmpty(EditCustomerNewPassword.Text))
+            {
+                try
+                {
+                    customer.SetPassword(EditCustomerNewPassword.Text);
+                }
+                catch (ArgumentException ex)
+                {
+                    EditCustomerErrorMessage.Text = ex.Message;
+                    return;
+                }
+            }
+
+            try
+            {
+                db.SaveChanges();
+            }
+            catch (DbUpdateException ex) when (IsDuplicateUsernameViolation(ex))
+            {
+                EditCustomerErrorMessage.Text = "That username is already taken.";
+                return;
+            }
+
+            var managerId = RepairAuthHelper.GetCurrentUserId();
+            var manager = db.Users.OfType<Manager>().FirstOrDefault(m => m.Id == managerId);
+            if (manager != null)
+            {
+                AuditLogger.Log(db, manager, AuditLog.ActionType.EditUser, AuditLog.EntityKind.User, customer.Id);
+                db.SaveChanges();
+            }
+
+            EditCustomerErrorMessage.Text = string.Empty;
+            EditCustomerSuccessMessage.Text = "Changes saved for " + customer.Name + ".";
+            EditCustomerNewPassword.Text = string.Empty;
+            EditCustomerConfirmPassword.Text = string.Empty;
+
+            BindEditCustomerDropDown(db);
+        }
+    }
+
+    protected void DeleteCustomer_Click(object sender, EventArgs e)
+    {
+        int id;
+        if (!int.TryParse(EditCustomerDropDown.SelectedValue, out id))
+        {
+            EditCustomerErrorMessage.Text = "Choose a customer first.";
+            return;
+        }
+
+        using (var db = new RepairShopContext())
+        {
+            var customer = db.Users.OfType<Customer>().FirstOrDefault(c => c.Id == id);
+            if (customer == null)
+            {
+                EditCustomerErrorMessage.Text = "That customer no longer exists.";
+                BindEditCustomerDropDown(db);
+                return;
+            }
+
+            // Soft delete only - see the matching comment on DeleteEmployee_Click: their
+            // existing Tickets, Comments, and AuditLog entries all keep pointing at this
+            // same User row, so history/attribution is unaffected.
+            customer.Delete();
+            db.SaveChanges();
+
+            var managerId = RepairAuthHelper.GetCurrentUserId();
+            var manager = db.Users.OfType<Manager>().FirstOrDefault(m => m.Id == managerId);
+            if (manager != null)
+            {
+                AuditLogger.Log(db, manager, AuditLog.ActionType.DeleteUser, AuditLog.EntityKind.User, customer.Id);
+                db.SaveChanges();
+            }
+
+            EditCustomerErrorMessage.Text = string.Empty;
+            EditCustomerSuccessMessage.Text = customer.Name + " has been removed.";
+            EditCustomerUserName.Text = string.Empty;
+            EditCustomerNewPassword.Text = string.Empty;
+            EditCustomerConfirmPassword.Text = string.Empty;
+
+            BindEditCustomerDropDown(db);
         }
     }
 }

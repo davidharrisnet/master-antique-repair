@@ -16,7 +16,7 @@ public partial class _Default : System.Web.UI.Page
         if (Context.User.IsInRole("Manager"))
         {
             MyViewLink.NavigateUrl = "~/ManagerView";
-            MyViewLink.Text = "Go to Employees";
+            MyViewLink.Text = "Go to Administration";
         }
         else if (Context.User.IsInRole("Employee"))
         {

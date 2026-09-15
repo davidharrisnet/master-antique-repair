@@ -9,6 +9,7 @@
                 <li runat="server" id="TicketSearchTabItem"><a href="#TicketSearchPane" data-toggle="pill">Ticket Search</a></li>
                 <li runat="server" id="CustomerSearchTabItem"><a href="#CustomerSearchPane" data-toggle="pill">Customer Search</a></li>
                 <li runat="server" id="EmployeeSearchTabItem"><a href="#EmployeeSearchPane" data-toggle="pill">Employee Search</a></li>
+                <li runat="server" id="CommentSearchTabItem"><a href="#CommentSearchPane" data-toggle="pill">Comment Search</a></li>
             </ul>
         </div>
         <div class="col-sm-9">
@@ -193,6 +194,52 @@
         </table>
         <asp:Label runat="server" ID="NoEmployeeTicketsLabel" Text="(none)" Visible="false" />
     </asp:Panel>
+        </ContentTemplate>
+    </asp:UpdatePanel>
+    </div>
+
+    <div runat="server" id="CommentSearchPane" ClientIDMode="Static">
+    <asp:UpdatePanel runat="server" ID="CommentSearchUpdatePanel" UpdateMode="Always">
+        <ContentTemplate>
+    <h3>Comment Search</h3>
+    <div class="form-inline" style="margin-bottom: 15px;">
+        <div class="form-group">
+            <asp:Label runat="server" AssociatedControlID="CommentSearchText">Search comment text</asp:Label>
+            <asp:TextBox runat="server" ID="CommentSearchText" CssClass="form-control" />
+        </div>
+        <asp:Button runat="server" Text="Search" OnClick="CommentSearch_Click" CssClass="btn btn-primary" />
+    </div>
+
+    <asp:Panel runat="server" ID="CommentSearchErrorPanel" Visible="false" CssClass="text-danger">
+        <asp:Literal runat="server" ID="CommentSearchErrorLiteral" />
+    </asp:Panel>
+
+    <table class="table table-condensed table-fixed">
+        <colgroup>
+            <col />
+            <col width="140" />
+            <col width="160" />
+            <col width="80" />
+        </colgroup>
+        <asp:Repeater runat="server" ID="CommentSearchRepeater">
+            <HeaderTemplate>
+                <thead><tr><th>Comment</th><th>Author</th><th>Posted</th><th>Ticket</th></tr></thead>
+                <tbody>
+            </HeaderTemplate>
+            <ItemTemplate>
+                <tr>
+                    <td>
+                        <span class="popover-toggle" tabindex="0" role="button" data-toggle="popover" data-trigger="focus" data-content='<%#: Eval("Text") %>'><%#: MasterAntiqueRepair.UiHelpers.Truncate(Eval("Text").ToString(), 80) %></span>
+                    </td>
+                    <td><%#: Eval("User.Name") %></td>
+                    <td><%# Eval("CreatedAt", "{0:g}") %></td>
+                    <td><a href='<%# "TicketDetailView.aspx?id=" + Eval("TicketId") %>'>#<%# Eval("TicketId") %></a></td>
+                </tr>
+            </ItemTemplate>
+            <FooterTemplate></tbody></FooterTemplate>
+        </asp:Repeater>
+    </table>
+    <asp:Label runat="server" ID="NoCommentsFoundLabel" Text="No matching comments found." Visible="false" />
         </ContentTemplate>
     </asp:UpdatePanel>
     </div>

@@ -51,10 +51,11 @@ public partial class Metrics : Page
                 days.Add(d);
             }
 
-            var employeeNames = completedTickets
-                .Where(t => t.User != null)
-                .Select(t => t.User.Name)
-                .Distinct()
+            // From the active employee roster, not from completedTickets - an employee
+            // with zero completions so far should still show up with a zero-filled
+            // series, not disappear from the charts entirely until their first close.
+            var employeeNames = manager.GetEmployeesWithTickets(db)
+                .Select(emp => emp.Name)
                 .OrderBy(n => n)
                 .ToList();
 
