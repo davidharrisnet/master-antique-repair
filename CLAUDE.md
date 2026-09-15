@@ -71,8 +71,8 @@ The real mechanism:
 ### Application flow / pages
 
 - **Customers**: sign up at `/Account/CustomerSignUp`, log in, land on `/CustomerView` (their own requests + link to `/SubmitRepair`). Submitting creates a `Ticket` in `SUBMITTED` state.
-- **Employees**: created only by a Manager via `/Account/Register` (no self-signup). Land on `/EmployeeView` — unassigned jobs (Assign to Me) and their own jobs (Mark Complete, with a comment modal).
-- **Managers**: land on `/ManagerView` — every employee with assigned jobs, unassigned jobs with submitting customer, every customer with their tickets. Only Managers see the "Register" nav link. **No UI path exists to create a Manager account** — must be inserted directly (or via `Seed-InitialUsers.ps1`). Managers also get `/TicketDetailView` (ticket/customer/employee search with cross-links) and `/AuditLogView` (paginated action log).
+- **Employees**: created only by a Manager, via the "Add New Employee" panel on `/ManagerView` (no self-signup, no separate registration page). Land on `/EmployeeView` — unassigned jobs (Assign to Me) and their own jobs (Mark Complete, with a comment modal).
+- **Managers**: land on `/ManagerView` ("Employees") — an Employee Management panel (add/edit/soft-delete employees), a dropdown to view one employee's tickets at a time, and every customer with their tickets. **No UI path exists to create a Manager account** — must be inserted directly (or via `Seed-InitialUsers.ps1`). Managers also get `/TicketDetailView` (ticket/customer/employee search with cross-links), `/AuditLogView` (paginated action log), and `/Metrics` (ticket/comment charts and stats).
 - `Default.aspx`/`About.aspx`/`Contact.aspx` are still the unmodified VS template scaffold (not part of the real app flow).
 - `Site.master`/`Site.master.cs` — desktop master page; anti-XSRF handling in `Page_Init`/`master_Page_PreLoad` (cookie-backed `ViewStateUserKey`) — don't remove without understanding the protection it provides.
 - `Site.Mobile.master` + `ViewSwitcher.ascx` — separate mobile master page toggle, via FriendlyUrls' mobile display mode support.

@@ -57,7 +57,6 @@
                         <li runat="server" id="MetricsListItem" visible="false"><a runat="server" href="~/Metrics">Metrics</a></li>
                     </ul>
                     <ul class="nav navbar-nav navbar-right">
-                        <li runat="server" id="RegisterListItem" visible="false"><a runat="server" href="~/Account/Register">Register</a></li>
                         <asp:LoginView runat="server" ViewStateMode="Disabled">
                             <AnonymousTemplate>
                                 <li><a runat="server" href="~/Account/CustomerSignUp">Sign up</a></li>

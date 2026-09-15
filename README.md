@@ -185,7 +185,7 @@ There are three roles — Customer, Employee, Manager — each landing on its ow
 
 ### Employee
 
-- Cannot self-register — created only by a Manager via `/Account/Register`. **Log in** at `/Account/Login`; lands on `/EmployeeView`.
+- Cannot self-register — created only by a Manager, via the "Add New Employee" panel on `/ManagerView`. **Log in** at `/Account/Login`; lands on `/EmployeeView`.
 - **View unassigned tickets**: a list of every `SUBMITTED` ticket with no employee yet, each with an "Assign to Me" button.
 - **Assign to Me**: takes an unassigned ticket — moves it to `INPROGRESS`, records `AssignedDate`, and assigns it to that employee (`Employee.TakeTicket`).
 - **View "My Tickets"**: every ticket currently or previously assigned to them, each with a "Mark Complete" button (visible while not yet `COMPLETED`).
@@ -196,8 +196,8 @@ There are three roles — Customer, Employee, Manager — each landing on its ow
 ### Manager
 
 - Has standing credentials seeded by `Scripts/Seed-InitialUsers.ps1` (see [Overview](#overview)) — there is currently no UI path to create a Manager account; one must be inserted directly into the database (see [Known limitations](#known-limitations)).
-- **Log in** at `/Account/Login`; lands on `/ManagerView`, showing (in order): every employee with their assigned tickets, every unassigned ticket (with the submitting customer's name), and every customer with the tickets they've submitted and each one's status.
-- **Register a new Employee account**: `/Account/Register` — only a Manager sees this link in the nav.
+- **Log in** at `/Account/Login`; lands on `/ManagerView` ("Employees"), showing: an Employee Management panel (add/edit/soft-delete employees), a dropdown to view one employee's tickets at a time, and every unassigned ticket (with the submitting customer's name).
+- **Manage employees**: the "Employee Management" panel on `/ManagerView` (collapsed by default) — add a new employee, or edit an existing one's name/password, or soft-delete them (they can no longer log in, but their tickets/comments/history are kept).
 - **View the Audit Log**: `/AuditLogView` — see [Manager tools](#manager-tools).
 - **Search for a ticket** by Id and see its full comment thread: `/TicketDetailView` — see [Manager tools](#manager-tools).
 - Managers do not add, edit, or delete comments themselves — the comment feature is Customer/Employee only; a Manager's view of a ticket's comments (via Ticket Search) is read-only.
@@ -346,7 +346,7 @@ This app went through an explicit security review pass during development. This 
 
 **The fix — encode on output, not input**: the correct defense is encoding untrusted data at the point it's written into HTML, not trying to blacklist "dangerous" input (which is trivially bypassed — case variants, encoded payloads, non-`<script>` vectors like `<img onerror=...>`, etc.). Concretely:
 - Data-binding expressions changed from `<%# %>` to the encoding form `<%#: %>` (e.g. `<%#: Eval("Text") %>`) everywhere a bound value could contain attacker-controlled text — comment text and author names across `CustomerView.aspx`, `EmployeeView.aspx`, `ManagerView.aspx`, and `TicketDetailView.aspx`.
-- `asp:Literal` controls set from code-behind got `Mode="Encode"` (`TicketDetailView.aspx`'s ticket-field literals, `Register.aspx`'s `SuccessMessage`, `SubmitRepair.aspx`'s `ErrorMessage`).
+- `asp:Literal` controls set from code-behind got `Mode="Encode"` (`TicketDetailView.aspx`'s ticket-field literals, `SubmitRepair.aspx`'s `ErrorMessage`).
 - Fields that are never rendered as HTML at all (JS string arguments like the "Mark Complete" modal's description) already went through `HttpUtility.JavaScriptStringEncode` for that context, and setting them via `.innerText` (not `.innerHTML`) client-side avoids re-introducing the same class of bug there.
 
 **What this doesn't protect against**: nothing here — output encoding is a complete fix for this specific bug once applied everywhere untrusted data is written into HTML. The residual risk is only "did we miss a spot," which is why this was swept across every view, not just the one first reported.
@@ -369,7 +369,7 @@ Not a live risk in this codebase: every data access goes through EF6/LINQ-to-Ent
 Every mutating action re-validates ownership **server-side**, independent of what the UI shows or what the client sends:
 - `User.EditComment`/`DeleteComment` throw `InvalidOperationException` unless `comment.UserId == Id` — a user can only ever edit or delete their own comments, even if they somehow submit another comment's id.
 - Ticket queries in code-behind are always scoped to the acting user: `EmployeeView`'s complete/comment actions filter by `t.User.Id == employeeId`; `CustomerView`'s filter by `t.Customer.Id == customerId`. An employee can't complete a ticket assigned to someone else by guessing its id, and a customer can't comment on someone else's ticket the same way.
-- Every page gates on role via `RepairAuthHelper.RequireRole` as the first statement in `Page_Load`, before any data access — `Manager`-only pages (`ManagerView`, `AuditLogView`, `TicketDetailView`, `Account/Register`) reject anyone else.
+- Every page gates on role via `RepairAuthHelper.RequireRole` as the first statement in `Page_Load`, before any data access — `Manager`-only pages (`ManagerView`, `AuditLogView`, `TicketDetailView`, `Metrics`) reject anyone else.
 
 ### Cross-Site Request Forgery (CSRF) vs. XSS — and why `confirm()` isn't a security control
 
