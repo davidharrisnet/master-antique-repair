@@ -72,6 +72,7 @@ public partial class SiteMaster : MasterPage
         ManagerViewListItem.Visible = Context.User.IsInRole("Manager");
         AuditLogViewListItem.Visible = Context.User.IsInRole("Manager");
         TicketDetailViewListItem.Visible = Context.User.IsInRole("Manager");
+        MetricsListItem.Visible = Context.User.IsInRole("Manager");
     }
 
     protected void Unnamed_LoggingOut(object sender, LoginCancelEventArgs e)

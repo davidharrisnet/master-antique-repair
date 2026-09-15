@@ -23,11 +23,7 @@ public partial class ManagerView : Page
                 var employees = manager.GetEmployeesWithTickets(db);
                 EmployeesRepeater.DataSource = employees;
                 EmployeesRepeater.DataBind();
-
-                var customers = manager.GetCustomersWithTickets(db);
-                CustomersRepeater.DataSource = customers;
-                CustomersRepeater.DataBind();
-
+               
                 UnassignedGrid.DataSource = db.Tickets
                     .Include(o => o.Customer)
                     .Where(o => o.User == null)
@@ -50,17 +46,5 @@ public partial class ManagerView : Page
         ticketsRepeater.DataSource = employee.Tickets;
         ticketsRepeater.DataBind();
     }
-
-    protected void CustomersRepeater_ItemDataBound(object sender, RepeaterItemEventArgs e)
-    {
-        if (e.Item.ItemType != ListItemType.Item && e.Item.ItemType != ListItemType.AlternatingItem)
-        {
-            return;
-        }
-
-        var customerTickets = (KeyValuePair<Customer, List<Ticket>>)e.Item.DataItem;
-        var ticketsRepeater = (Repeater)e.Item.FindControl("CustomerTicketsRepeater");
-        ticketsRepeater.DataSource = customerTickets.Value;
-        ticketsRepeater.DataBind();
-    }
+   
 }
