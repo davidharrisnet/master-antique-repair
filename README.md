@@ -23,7 +23,7 @@ Non-functional requirements:
 
 ## Project 
 
-### Stac
+### Stack
 
 - ASP.NET Web Forms, C#, .NET Framework 4.7.2
 - Entity Framework 6 (Code First + Migrations)
@@ -54,9 +54,20 @@ git clone --branch v2.0 https://github.com/davidharrisnet/master-antique-repair.
 ```
 
 
+## Prerequisites
+
+1. .NET Frameworks 4.7.2.  
+Open [.NET Framework 4.7.2](https://support.microsoft.com/en-us/servicing/os/windows/2019/07/microsoft-net-framework-4-7-2-offline-installer-for-windows), then select "Download the Microsoft .NET Framework 4.7.2 offline installer package now."
+
+3. Install Visual Studio 2017
+* [Visual Studio 2017 via microsoft.com](https://download.visualstudio.microsoft.com/download/pr/8729ca3d-c3b2-4b32-b6fb-a7ea468a4af2/4448a86b1ae7d5b90bdc9c51e3f18b8f6ab0d3176560aa23b03f102380e02746/vs_Community.exe)
+
+  * Using the Visual Studio Installer, select Modify, the select ASP.NET and web development
+  * Add a selection to .NET Framework 4.7.2 development tools
+    
 ## Solution structure
 
-`MasterAntiqueRepair.sln` contains three projects:
+`MasterAntiqueRepair.sln` contains two projects:
 
 | Project | Type | Purpose |
 |---|---|---|
