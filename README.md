@@ -1,25 +1,39 @@
 # MasterAntiqueRepair
 
-A repair-shop tracking application: customers submit repair requests for antique items, employees pick up and complete them, and managers oversee the whole workload. Built as an ASP.NET Web Forms "legacy build" exercise (see [Project goals](#project-goals) below).
+Master Antique Repair is a repair-shop tracking application.  Customers submit repair requests for antique items and mployees pick up the tickets and complete them.  Managers oversee work status and administer employee and cutomer accournts. They also view Metrics and Audit Logs and have a business model Search panel. 
 
 ## Overview
 
 **PHASE 1 — Legacy Build**
 Stack: ASP.NET Framework 4.7.2, C#, WebForms, SQL Server
 
-MasterAntiqueRepair tracks antique-repair work end to end: a customer describes an item and submits it as a **ticket**; an employee picks it up, works it, and marks it complete; a manager oversees everyone's workload. Every ticket carries a status (`SUBMITTED` → `INPROGRESS` → `COMPLETED`) and a running, dated **comment thread** either side can add to once the work is done — a lightweight back-and-forth for "here's what we found" / "thanks, looks good" without a full messaging system. A manager-only **Audit Log** records who did what (created a ticket, logged in, assigned/completed a job, added/edited/deleted a comment) without ever storing the comment or ticket text itself — just enough to answer "who did this, to what, and when," not "what did they write."
+Functional requirements:
 
-Login credentials for the pre-seeded accounts (see [Seeding initial accounts](#seeding-initial-accounts) for how these get created):
+*	A single core domain with 3–4 related entities (e.g., a simple case/request tracking app: Requests → Assignees → Status History)
+*	Basic CRUD for each entity
+*	One approval/status-transition workflow with at least 3 states (e.g., Submitted → In Review → Closed)
+*	A simple login/role check (hardcoded roles are fine)
+*	One list/search view with filtering and pagination
 
-|Name|Password|Role|
-|---|---|---|
-|manager|ManagerPass123!|Manager|
-|employee1|EmployeePass123!|Employee|
-|employee2|EmployeePass456!|Employee|
+Non-functional requirements:
 
-There's no seeded customer account — sign up as one via `/Account/CustomerSignUp`.
+*	Layered architecture (UI / business logic / data access clearly separated — no logic in code-behind)*	Server-side input validation
+*	Logging of workflow state changes (this becomes your audit trail in Phase 2)
+*	A short README explaining the structure and how to run it
 
-See [User roles and actions](#user-roles-and-actions) below for what each role can actually do, and [Project goals](#project-goals) for how this maps back to the original Phase 1 spec.
+
+
+## Project goals
+
+This is explicitly a "legacy build" learning exercise. The original scope, and where each item landed:
+
+- A core domain of 3–4 related entities with basic CRUD for each — see [Domain model](#domain-model). Create/Read/Update/Delete are all covered for comments (see [Comments](#comments)); tickets and users currently support Create/Read (no UI path to edit/delete a ticket or user yet).
+- An approval/status-transition workflow with at least 3 states — see `State.RepairState`.
+- A simple login/role check (hardcoded roles are acceptable) — see [Authentication](#authentication), now with login lockout after repeated failures (see [Security](#security)).
+- One list/search view with filtering and pagination — the `EmployeeView`/`ManagerView`/`CustomerView` ticket lists, plus the Manager-only Audit Log's Entity Id search and adjustable page size (see [Manager tools](#manager-tools)).
+- Layered architecture (UI / business logic / data access separated, no logic in code-behind) — business logic lives on the domain classes (`Employee.TakeTicket`/`CompleteTicket`, `Customer.submit`, `User.AddComment`/`EditComment`/`DeleteComment`, etc.), not in `.aspx.cs` files.
+- Server-side input validation — see [Security](#security) for the full rundown (length limits, control-character rejection, password policy, etc.), not just presence-checks.
+- Logging of workflow state changes — the `AuditLog` entity and Manager-only Audit Log page (see [Domain model](#domain-model) and [Manager tools](#manager-tools)) now cover this as a real audit trail, not just the `Ticket.SubmittedDate`/`AssignedDate`/`CompletedDate` timestamps this started as.
 
 ## Getting the code
 
@@ -28,15 +42,10 @@ See [User roles and actions](#user-roles-and-actions) below for what each role c
 git clone https://github.com/davidharrisnet/master-antique-repair.git
 ```
 
-**A specific released version** (e.g. `v1.0` — see all released versions at [github.com/davidharrisnet/master-antique-repair/releases](https://github.com/davidharrisnet/master-antique-repair/releases)):
+**A specific released version** (e.g. `v2.0` — see all released versions at [github.com/davidharrisnet/master-antique-repair/releases](https://github.com/davidharrisnet/master-antique-repair/releases)):
 ```bash
-git clone --branch v1.0 https://github.com/davidharrisnet/master-antique-repair.git
+git clone --branch v2.0 https://github.com/davidharrisnet/master-antique-repair.git
 ```
-This pins the clone to that exact tagged snapshot rather than the latest `main`. Git will report "detached HEAD" after — that's expected and not a problem; it just means you're not on a branch that can be pushed to, which is correct for a fixed version. `git checkout main` switches back to normal branch work if you need to.
-
-**No git at all**: open the [Releases page](https://github.com/davidharrisnet/master-antique-repair/releases), pick a version, and use its "Source code (zip)" download link.
-
-Once you have the code, continue with [Getting started](#getting-started-new-developer-setup) below to set it up.
 
 ## Stack
 
@@ -53,123 +62,7 @@ Once you have the code, continue with [Getting started](#getting-started-new-dev
 |---|---|---|
 | `MasterAntiqueRepair` | Website Project (no `.csproj`) | The web app — pages, authentication, styling |
 | `MasterAntiqueRepairData` | Class Library | Domain model and EF6 `DbContext`s |
-| `MasterAntiqueRepairScratch` | Console App | Scratch pad for experimenting against the domain model directly, with no web exposure |
 
-## Getting started (new developer setup)
-
-This project is a legacy ASP.NET Web Forms app with several non-obvious setup gotchas (classic tooling, Windows-only, no `dotnet` CLI). The steps below take a fresh clone to a fully working local instance, in the order that actually works — each has been run and verified for real (see `claude.log` for the verification trail), not just written from memory.
-
-**Quick start** — once the prerequisites in step 1 are installed, this is the whole database side of setup, no Visual Studio required. All of this is one-time per machine except the last two lines:
-```powershell
-# Allows these local scripts to run
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-
-# Put MSBuild on PATH — Initialize-Database.ps1 (below) needs it to build MasterAntiqueRepairScratch.
-# Skip this ONLY if `Get-Command msbuild` already resolves (e.g. you've already done this, or you're
-# running from a Developer PowerShell for VS prompt).
-$vswhere = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
-$msbuildDir = Split-Path (& $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe)
-$currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
-if ($currentPath -notlike "*$msbuildDir*") {
-    [Environment]::SetEnvironmentVariable("PATH", "$currentPath;$msbuildDir", "User")
-}
-# Open a NEW PowerShell window from here on — PATH changes above don't apply to this one.
-
-# Build the schema (see step 6 for how this works without F5)
-.\Scripts\Initialize-Database.ps1
-
-# Seed the Manager + two Employee accounts (see "Seeding initial accounts")
-.\Scripts\Seed-InitialUsers.ps1
-```
-Then log in at `/Account/Login` (F5 in Visual Studio to actually run the site) as `manager` / `ManagerPass123!`. The full walkthrough below covers the rest (build/restore, troubleshooting) — read it in full the first time; this block is just the part worth copy-pasting on every subsequent fresh checkout.
-
-1. **Install prerequisites**:
-
-   | Tool | Why | Notes |
-   |---|---|---|
-   | **Windows 10/11** | This is a Windows-only stack (IIS Express, LocalDB, Windows PowerShell) — there's no cross-platform path here. | |
-   | **Git** | To clone the repo. | Any recent version. |
-   | **Visual Studio 2017 or later**, "ASP.NET and web development" workload | Brings IIS Express, LocalDB, NuGet, Package Manager Console, and support for classic Website Projects — `MasterAntiqueRepair` (the web project) has no `.csproj`; it's the pre-SDK "Website" project type, which needs this workload specifically, not just any .NET workload. | Built and verified against VS2017 Community. On a newer VS version, if the `.sln` won't open or offers to convert the website project, add Website Project support under the Visual Studio Installer's Individual Components. |
-   | **SQL Server LocalDB** | The actual database engine — a lightweight, per-user SQL Server instance. | Installed automatically by the workload above; you shouldn't need to install it separately. |
-   | **SQL Server Management Studio (SSMS)** — optional | Inspecting the database directly, outside the app. | Not required to build or run the app. See [Accessing the database](#accessing-the-database). |
-
-   Verify what you actually have installed:
-   ```powershell
-   # Visual Studio + the required workload — should print an edition/version, not nothing
-   & "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Workload.NetWeb -property displayName
-
-   # LocalDB — should list an "MSSQLLocalDB" instance
-   SqlLocalDB.exe info
-
-   # Git
-   git --version
-   ```
-   An empty result from the first command means the "ASP.NET and web development" workload isn't installed — add it via the Visual Studio Installer (not a reinstall of Visual Studio itself).
-
-2. **Get the code** (see [Getting the code](#getting-the-code) above for cloning a specific released version instead of latest `main`) and **open** `MasterAntiqueRepair/MasterAntiqueRepair.sln` in Visual Studio.
-
-3. **Restore NuGet packages**: `nuget restore MasterAntiqueRepair/MasterAntiqueRepair.sln`, or let Visual Studio do it on open.
-
-   **If the build then fails** with `Could not find file '...\Bin\roslyn\csc.exe'` or an auto-refresh error for `microsoft.aspnet.web.optimization.webforms.dll`: plain NuGet restore doesn't run packages' `install.ps1` scripts, which is how these two packages deliver files into the website's `Bin/`. Fix in Package Manager Console:
-   ```
-   Update-Package Microsoft.CodeDom.Providers.DotNetCompilerPlatform -reinstall
-   Install-Package Microsoft.AspNet.Web.Optimization.WebForms -Version 1.1.3
-   ```
-
-4. **Put MSBuild on PATH.** Two things need this: EF6 Migrations tooling (Package Manager Console's `Add-Migration`/`Update-Database`) shells out to `msbuild.exe` by bare name internally, and `Scripts/Initialize-Database.ps1` (step 6) uses it to build `MasterAntiqueRepairScratch`. Without it, PMC migration commands fail with a `Process.Start`-related error from inside `EntityFramework.psm1`, and `Initialize-Database.ps1` fails with `msbuild isn't on PATH`. In an **elevated-not-required** PowerShell prompt:
-   ```powershell
-   $vswhere = "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
-   $msbuildDir = Split-Path (& $vswhere -latest -products * -requires Microsoft.Component.MSBuild -find MSBuild\**\Bin\MSBuild.exe)
-   $currentPath = [Environment]::GetEnvironmentVariable("PATH", "User")
-   if ($currentPath -notlike "*$msbuildDir*") {
-       [Environment]::SetEnvironmentVariable("PATH", "$currentPath;$msbuildDir", "User")
-   }
-   ```
-   This uses `vswhere.exe` (ships with every VS2017+ install) to find the right MSBuild regardless of VS edition/version, and only appends it if it isn't already there. **Restart Visual Studio afterward** — it reads PATH once at launch.
-
-5. **Allow this project's PowerShell scripts to run.** `Scripts/Seed-InitialUsers.ps1` and `Scripts/Reset-Database.ps1` are unsigned local scripts, which Windows' default execution policy blocks:
-   ```
-   File ...\Scripts\Reset-Database.ps1 cannot be loaded. The file ... is not digitally signed.
-   ```
-   Fix (doesn't need admin, doesn't affect scripts downloaded from the internet — those still require a signature):
-   ```powershell
-   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-   ```
-
-6. **Build the schema.** RepairShopContext's schema only gets created the first time something actually queries it (its EF6 Migrations-based initializer — see [MasterAntiqueRepairData](#masterantiquerepairdata)). Either:
-   - Run the site once (F5 / Ctrl+F5 in Visual Studio) and submit the Login form once — this starts IIS Express on port `57962` and the login attempt is what triggers it; or
-   - Run `.\Scripts\Initialize-Database.ps1` instead — builds and runs `MasterAntiqueRepairScratch` (a plain console app that just opens a `RepairShopContext`), which triggers the exact same thing with no web server or port involved at all. Useful for scripting/CI, or any time you want the schema built without opening Visual Studio.
-
-   **If Visual Studio reports `Unable to launch... Port 57962 is in use`**: something else (often a previous debug session, or an IIS Express instance started outside Visual Studio, e.g. from a terminal) is still bound to that port. Find and stop it:
-   ```powershell
-   Get-Process iisexpress -ErrorAction SilentlyContinue | Stop-Process -Force
-   ```
-   If the port is still reported busy afterward, find out what's actually holding it:
-   ```powershell
-   netstat -ano | findstr :57962
-   ```
-   The last column is the owning process ID — `Get-Process -Id <pid>` identifies it, or `Stop-Process -Id <pid> -Force` to free the port directly.
-
-7. **Seed initial accounts** — there's no UI path to create the very first account (Register is Manager-only):
-   ```
-   .\Scripts\Seed-InitialUsers.ps1
-   ```
-   See [Seeding initial accounts](#seeding-initial-accounts) for the credentials it creates.
-
-8. **Verify**: log in at `/Account/Login` with the seeded Manager account. You should land on `/ManagerView`.
-
-## Domain model
-
-Entities live in `MasterAntiqueRepairData/App_Code/` (see [MasterAntiqueRepairData](#masterantiquerepairdata) below).
-
-- **`User`** — base type: `Id`, `Name`, `CreatedAt`, `PasswordHash`, `FailedLoginAttempts`, `LockedOutUntil`, `Tickets` (collection). Mapped via Table-Per-Hierarchy — one `Users` table, with a `Discriminator` column identifying the concrete type. `AddComment`/`EditComment`/`DeleteComment` (shared by every role — see [Comments](#comments) below) and the login-lockout helpers (`IsLockedOut`/`RecordFailedLogin`/`RecordSuccessfulLogin` — see [Security](#security)) live here since the rules are identical regardless of role.
-  - **`Customer : User`** — submits repair requests (`submit(Ticket)`).
-  - **`Employee : User`** — picks up and completes repair requests. `TakeTicket(Ticket)` assigns a ticket to itself; `CompleteTicket(Ticket, comment)` marks one done and (if a comment was entered) posts it as the first entry in that ticket's comment thread.
-  - **`Manager : User`** — oversees employees, customers, and jobs; also the only role with access to the Audit Log and Ticket Search tools (see [Manager tools](#manager-tools)). `GetEmployeesWithTickets(db)` returns all employees with their assigned tickets; `GetCustomersWithTickets(db)` returns all customers with the tickets they submitted.
-- **`Ticket`** — a repair request: `Id`, `Description`, `State` (see below), `Customer` (who submitted it), `User` (the employee it's assigned to, nullable until picked up), `SubmittedDate`, `AssignedDate`, `CompletedDate`, `Comments` (collection — see below).
-- **`Comment`** — one dated entry in a ticket's comment thread: `Id`, `UserId`/`User` (the author — customer or employee), `TicketId`/`Ticket`, `Text`, `CreatedAt`. See [Comments](#comments) for who can add/edit/delete what.
-- **`AuditLog`** — one row per tracked action: `Id`, `Timestamp`, `UserId`/`User` (who did it), `Action` (`AuditLog.ActionType` enum — `CreateUser`, `Login`, `CreateTicket`, `AssignTicket`, `CompleteTicket`, `AddComment`, `EditComment`, `DeleteComment`), `EntityType` (`AuditLog.EntityKind` enum — `User`, `Ticket`, `Comment`), `EntityId`. Deliberately stores only the id of the thing acted on, never comment or ticket text — see [Security](#security).
-- **`State.RepairState`** (enum) — `SUBMITTED` → `INPROGRESS` → `COMPLETED`.
 
 ## User roles and actions
 
@@ -202,29 +95,19 @@ There are three roles — Customer, Employee, Manager — each landing on its ow
 - **Search for a ticket** by Id and see its full comment thread: `/TicketDetailView` — see [Manager tools](#manager-tools).
 - Managers do not add, edit, or delete comments themselves — the comment feature is Customer/Employee only; a Manager's view of a ticket's comments (via Ticket Search) is read-only.
 
-## Comments
 
-Once a ticket reaches `COMPLETED`, both the customer who submitted it and the employee who completed it can leave a running, dated comment thread on it — separate threads per side ("Employee Comments" and "Comments"/"Customer Comments" columns on `EmployeeView`/`CustomerView`/`TicketDetailView`), each rendered as a bulleted list (one `<li>` per `Comment` row, sorted oldest-first by `CreatedAt`). A Manager can see both threads (read-only) for any ticket via [Ticket Search](#manager-tools), but never adds to them.
+Login credentials for the pre-seeded accounts (see [Seeding initial accounts](#seeding-initial-accounts) for how these get created):
 
-The underlying entity is `Comment` (see [Domain model](#domain-model)) — this is a real one-to-many table, not a single string field, so multiple comments accumulate over time instead of overwriting each other. (An earlier design used a single `Ticket.Comment` string set once at completion time; it was removed in favor of this entity once the "let either side add more comments later" requirement came up — nothing in the current schema still has it.)
+|Name|Password|Role|
+|---|---|---|
+|manager|ManagerPass123!|Manager|
+|employee1|EmployeePass123!|Employee|
+|employee2|EmployeePass456!|Employee|
 
-### Adding a comment
+There's no seeded customer account — sign up as one via `/Account/CustomerSignUp`.
 
-- UI: an "Add Comment" button (visible only once the ticket is `COMPLETED`) opens a modal with a text box; submitting it posts back to `PostComment_Click` in the relevant view's code-behind.
-- Domain: `User.AddComment(Ticket, text)` — shared by `Customer` and `Employee` since the rule is identical for both: throws `InvalidOperationException` unless `ticket.State == COMPLETED`, and validates the text via `ValidateCommentText` (required, ≤2000 characters, no embedded control characters — see [Security](#security)).
-- The employee's first comment on a ticket, entered via the "Mark Complete" modal, goes through this exact same path (`Employee.CompleteTicket` calls `AddComment` internally after moving the ticket to `COMPLETED`) — there's no separate mechanism for "the completion note" vs. "a later comment."
+See [User roles and actions](#user-roles-and-actions) below for what each role can actually do, and [Project goals](#project-goals) for how this maps back to the original Phase 1 spec.
 
-### Editing a comment
-
-- UI: an "Edit" link next to each comment in your own thread opens a modal pre-filled with the current text; saving posts back to `SaveEditComment_Click`.
-- Domain: `User.EditComment(Comment, newText)` — throws `InvalidOperationException` unless `comment.UserId == Id` (you can only edit your own comment, checked server-side regardless of what the UI shows), then re-validates the new text the same way as adding.
-- You can only edit a comment on a ticket you have access to in the first place (a customer's own submitted tickets, or an employee's own assigned tickets) — the surrounding query in code-behind scopes which comments are even reachable before the ownership check ever runs.
-
-### Deleting a comment
-
-- UI: a "Delete" link next to each comment in your own thread, guarded by a plain JS `confirm('Are you sure?')` before the postback fires.
-- Domain: `User.DeleteComment(Comment)` — same ownership check as editing (`comment.UserId == Id`); the actual row removal (`db.Comments.Remove(comment)`) happens in code-behind after that check passes.
-- The `confirm()` dialog is a UX safety net against an accidental click, not a security boundary — see [Security](#security) for why that distinction matters and what actually enforces the ownership rule.
 
 ## Manager tools
 
@@ -258,17 +141,6 @@ Authentication is custom, built directly on the domain model above — not ASP.N
 - After login, each role lands on its own page (`Employee` → `/EmployeeView`, `Manager` → `/ManagerView`, `Customer` → `/CustomerView`), unless a `ReturnUrl` was specified.
 - `Account/ForgotPassword` / `Account/ResetPassword` provide self-service password recovery — see [IP-based rate limiting, password reset, and HTTPS enforcement](#ip-based-rate-limiting-password-reset-and-https-enforcement) under Security for the full design (there's no email in this app, so the reset link is shown on-screen rather than sent).
 
-## MasterAntiqueRepairData
-
-A classic (non-SDK) Class Library project, referenced by the website. It exists as a separate project specifically because EF6 Code First Migrations tooling (`Enable-Migrations`, `Add-Migration`, `Update-Database`) does not work against a classic Website Project — it requires a real `.csproj`.
-
-Its classes are namespaced `MasterAntiqueRepair` (matching the website), not `MasterAntiqueRepairData`.
-
-### `RepairShopContext`
-
-The application's real `DbContext` — `DbSet<User> Users`, `DbSet<Ticket> Tickets`, `DbSet<Comment> Comments`, `DbSet<AuditLog> AuditLogs`. Uses the `"DefaultConnection"` connection string (the same LocalDB database the website's `App_Data` folder holds). Under EF6 Migrations, with its own configuration in `Migrations/RepairShop/`.
-
-Because a Migrations configuration exists for it, EF6 automatically uses `MigrateDatabaseToLatestVersion` as its initializer — not the plain `CreateDatabaseIfNotExists` default. In practice this means the very first request that touches `RepairShopContext` against a database with no `__MigrationHistory` row for this context runs every migration under `Migrations/RepairShop/` in order, starting with `InitialCreate` — which is what actually builds `dbo.Users`/`dbo.Tickets` from nothing (later migrations under the same folder add `dbo.Comments`, `dbo.AuditLogs`, and the various renames/column changes described in [Security](#security)). There's no separate "create schema" step; hitting the site (or running any of the `Scripts/*.ps1` seed/reset flows) is what triggers it.
 
 ### Running migrations
 
@@ -283,9 +155,6 @@ Update-Database -ConfigurationTypeName MasterAntiqueRepairData.Migrations.Repair
 
 Set **Default project** to `MasterAntiqueRepairData` in Package Manager Console first. Running migrations commands against the website project itself fails outright (`You cannot call a method on a null-valued expression`) — that's the reason this project exists.
 
-## MasterAntiqueRepairScratch
-
-A plain Console App referencing `MasterAntiqueRepairData` directly, for trying out EF6/domain-model code without any web or IIS exposure — nothing in it can be reached by a browser. Its `App.config` has its own copy of the `DefaultConnection` connection string; `Program.cs` points `|DataDirectory|` at the website's real `App_Data` folder at startup, so it reads/writes the same database as the live site. Rewrite `Program.cs` freely — it's meant to be overwritten for whatever you're currently testing.
 
 ## Accessing the database
 
@@ -427,16 +296,4 @@ Until this migration is applied, EF6 throws `The model backing the 'RepairShopCo
 
 - The password reset flow (see [Security](#security)) has no email/SMTP behind it — the reset link is shown directly on the `Forgot Password` page instead of being sent anywhere, which only works because the person requesting the reset is also the one viewing that page (fine for local/dev use; a real deployment needs to swap that one line for an actual email send).
 - `IpThrottle`'s rate-limiting state is in-memory per process — it resets on an app restart and wouldn't be shared across server instances if this app were ever scaled out to more than one.
-
-## Project goals
-
-This is explicitly a "legacy build" learning exercise. The original scope, and where each item landed:
-
-- A core domain of 3–4 related entities with basic CRUD for each — see [Domain model](#domain-model). Create/Read/Update/Delete are all covered for comments (see [Comments](#comments)); tickets and users currently support Create/Read (no UI path to edit/delete a ticket or user yet).
-- An approval/status-transition workflow with at least 3 states — see `State.RepairState`.
-- A simple login/role check (hardcoded roles are acceptable) — see [Authentication](#authentication), now with login lockout after repeated failures (see [Security](#security)).
-- One list/search view with filtering and pagination — the `EmployeeView`/`ManagerView`/`CustomerView` ticket lists, plus the Manager-only Audit Log's Entity Id search and adjustable page size (see [Manager tools](#manager-tools)).
-- Layered architecture (UI / business logic / data access separated, no logic in code-behind) — business logic lives on the domain classes (`Employee.TakeTicket`/`CompleteTicket`, `Customer.submit`, `User.AddComment`/`EditComment`/`DeleteComment`, etc.), not in `.aspx.cs` files.
-- Server-side input validation — see [Security](#security) for the full rundown (length limits, control-character rejection, password policy, etc.), not just presence-checks.
-- Logging of workflow state changes — the `AuditLog` entity and Manager-only Audit Log page (see [Domain model](#domain-model) and [Manager tools](#manager-tools)) now cover this as a real audit trail, not just the `Ticket.SubmittedDate`/`AssignedDate`/`CompletedDate` timestamps this started as.
 
