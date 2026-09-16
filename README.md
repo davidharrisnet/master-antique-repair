@@ -21,16 +21,22 @@ Non-functional requirements:
 *	Logging of workflow state changes (this becomes your audit trail in Phase 2)
 *	A short README explaining the structure and how to run it
 
+## Project 
 
+### Stac
 
-## Project goals
+- ASP.NET Web Forms, C#, .NET Framework 4.7.2
+- Entity Framework 6 (Code First + Migrations)
+- SQL Server LocalDB
+- Bootstrap 3 / jQuery, via `System.Web.Optimization` bundling
 
-This is explicitly a "legacy build" learning exercise. The original scope, and where each item landed:
-
+### Functional Features
 - A core domain of 3–4 related entities with basic CRUD for each — see [Domain model](#domain-model). Create/Read/Update/Delete are all covered for comments (see [Comments](#comments)); tickets and users currently support Create/Read (no UI path to edit/delete a ticket or user yet).
 - An approval/status-transition workflow with at least 3 states — see `State.RepairState`.
 - A simple login/role check (hardcoded roles are acceptable) — see [Authentication](#authentication), now with login lockout after repeated failures (see [Security](#security)).
 - One list/search view with filtering and pagination — the `EmployeeView`/`ManagerView`/`CustomerView` ticket lists, plus the Manager-only Audit Log's Entity Id search and adjustable page size (see [Manager tools](#manager-tools)).
+
+### Non-functional Featueres
 - Layered architecture (UI / business logic / data access separated, no logic in code-behind) — business logic lives on the domain classes (`Employee.TakeTicket`/`CompleteTicket`, `Customer.submit`, `User.AddComment`/`EditComment`/`DeleteComment`, etc.), not in `.aspx.cs` files.
 - Server-side input validation — see [Security](#security) for the full rundown (length limits, control-character rejection, password policy, etc.), not just presence-checks.
 - Logging of workflow state changes — the `AuditLog` entity and Manager-only Audit Log page (see [Domain model](#domain-model) and [Manager tools](#manager-tools)) now cover this as a real audit trail, not just the `Ticket.SubmittedDate`/`AssignedDate`/`CompletedDate` timestamps this started as.
@@ -47,12 +53,6 @@ git clone https://github.com/davidharrisnet/master-antique-repair.git
 git clone --branch v2.0 https://github.com/davidharrisnet/master-antique-repair.git
 ```
 
-## Stack
-
-- ASP.NET Web Forms, C#, .NET Framework 4.7.2
-- Entity Framework 6 (Code First + Migrations)
-- SQL Server LocalDB
-- Bootstrap 3 / jQuery, via `System.Web.Optimization` bundling
 
 ## Solution structure
 
@@ -63,6 +63,7 @@ git clone --branch v2.0 https://github.com/davidharrisnet/master-antique-repair.
 | `MasterAntiqueRepair` | Website Project (no `.csproj`) | The web app — pages, authentication, styling |
 | `MasterAntiqueRepairData` | Class Library | Domain model and EF6 `DbContext`s |
 
+# Project 
 
 ## User roles and actions
 
