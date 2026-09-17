@@ -83,9 +83,20 @@ git clone --branch v2.0 https://github.com/davidharrisnet/master-antique-repair.
 - SQL Server LocalDB
 - Bootstrap 3 / jQuery, via `System.Web.Optimization` bundling
 
+## Prerequisites
+
+1. .NET Frameworks 4.7.2.  
+Open [.NET Framework 4.7.2](https://support.microsoft.com/en-us/servicing/os/windows/2019/07/microsoft-net-framework-4-7-2-offline-installer-for-windows), then select "Download the Microsoft .NET Framework 4.7.2 offline installer package now."
+
+3. Install Visual Studio 2017
+* [Visual Studio 2017 via microsoft.com](https://download.visualstudio.microsoft.com/download/pr/8729ca3d-c3b2-4b32-b6fb-a7ea468a4af2/4448a86b1ae7d5b90bdc9c51e3f18b8f6ab0d3176560aa23b03f102380e02746/vs_Community.exe)
+
+  * Using the Visual Studio Installer, select Modify, the select ASP.NET and web development
+  * Add a selection to .NET Framework 4.7.2 development tools
+    
 ## Solution structure
 
-`MasterAntiqueRepair.sln` contains three projects:
+`MasterAntiqueRepair.sln` contains two projects:
 
 | Project | Type | Purpose |
 |---|---|---|
@@ -95,7 +106,10 @@ git clone --branch v2.0 https://github.com/davidharrisnet/master-antique-repair.
 
 ## Getting started
 
-1. **Prerequisites**: Visual Studio 2019+ with the ASP.NET/web workload, SQL Server LocalDB (installed with VS by default).
+1. **Prerequisites**:
+   - [.NET Framework 4.7.2](https://support.microsoft.com/en-us/servicing/os/windows/2019/07/microsoft-net-framework-4-7-2-offline-installer-for-windows) — "Download the Microsoft .NET Framework 4.7.2 offline installer package now."
+   - [Visual Studio 2017](https://download.visualstudio.microsoft.com/download/pr/8729ca3d-c3b2-4b32-b6fb-a7ea468a4af2/4448a86b1ae7d5b90bdc9c51e3f18b8f6ab0d3176560aa23b03f102380e02746/vs_Community.exe) (a newer Visual Studio with the same workload also works) — in the Visual Studio Installer, choose **Modify**, select the **ASP.NET and web development** workload, and add **.NET Framework 4.7.2 development tools** under its optional components.
+   - SQL Server LocalDB (installed with Visual Studio by default).
 2. **Restore packages**: `nuget restore MasterAntiqueRepair/MasterAntiqueRepair.sln`. If a fresh restore leaves the website unable to build (`Could not find file '...\Bin\roslyn\csc.exe'`, or an auto-refresh error for `microsoft.aspnet.web.optimization.webforms.dll`) — plain restore doesn't run packages' `install.ps1`, which is how those two land in `Bin/`. Fix in Package Manager Console:
    ```
    Update-Package Microsoft.CodeDom.Providers.DotNetCompilerPlatform -reinstall
