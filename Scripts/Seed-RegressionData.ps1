@@ -15,9 +15,10 @@
 
     Requires the target database to be empty (no Users, no Tickets) - it checks first and
     refuses to run otherwise, since seeding on top of existing data would not produce
-    repeatable counts. Reset first:
-        .\Scripts\Reset-Database.ps1 -Database MasterAntiqueRepairTest
-        .\Scripts\Seed-RegressionData.ps1 -Database MasterAntiqueRepairTest
+    repeatable counts. Reset first - this targets the working LocalDB database by default,
+    and Reset-Database.ps1 is destructive (takes any dev accounts/tickets in it with it):
+        .\Scripts\Reset-Database.ps1
+        .\Scripts\Seed-RegressionData.ps1
 
     Schema creation is not a separate step - EF6's migrations-based initializer runs
     automatically the moment this tool opens its first RepairShopContext against the
@@ -30,16 +31,16 @@
     SQL Server instance to connect to. Defaults to the LocalDB instance this project uses.
 
 .PARAMETER Database
-    Database (catalog) name to seed into. Defaults to the live app database - strongly
-    recommended to override this with a dedicated database (e.g. "MasterAntiqueRepairTest")
-    so regression runs never collide with real dev data.
+    Database (catalog) name to seed into. Defaults to the working LocalDB database (the
+    same one the app uses via F5) - pass a different name here to target a separate
+    catalog instead.
 
 .PARAMETER AppDataPath
     Folder for the .mdf/_log.ldf files. Defaults to the website's App_Data folder.
 
 .EXAMPLE
-    .\Scripts\Reset-Database.ps1 -Database MasterAntiqueRepairTest
-    .\Scripts\Seed-RegressionData.ps1 -Database MasterAntiqueRepairTest
+    .\Scripts\Reset-Database.ps1
+    .\Scripts\Seed-RegressionData.ps1
 #>
 [CmdletBinding()]
 param(

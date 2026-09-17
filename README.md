@@ -234,12 +234,14 @@ Targets the live app database by default; pass `-Database "<CatalogName>"` for a
 
 `Scripts/Seed-RegressionData.ps1` populates a fresh database with a fixed, deterministic dataset — 1 Manager, 3 Employees, 8 Customers, and 24 Tickets — via the real domain/service methods (so validation and audit logging behave exactly like production), then patches every timestamp to a fixed offset from the moment the script runs. Re-running it against a freshly reset database always produces identical counts, so the resulting `AuditLogs`/`Tickets`/`Comments` rows can be used as a regression baseline.
 
-Requires an empty database — it checks first and refuses to run otherwise, since seeding on top of existing data would not produce repeatable counts. Recommended: run it against a dedicated database, not the live dev one:
+Requires an empty database — it checks first and refuses to run otherwise, since seeding on top of existing data would not produce repeatable counts. Run against the working LocalDB database (both scripts default to it; **`Reset-Database.ps1` is destructive and takes everything currently in that database with it** — any accounts/tickets you created by hand are gone after this):
 
 ```
-.\Scripts\Reset-Database.ps1 -Database MasterAntiqueRepairTest
-.\Scripts\Seed-RegressionData.ps1 -Database MasterAntiqueRepairTest
+.\Scripts\Reset-Database.ps1
+.\Scripts\Seed-RegressionData.ps1
 ```
+
+Pass `-Database "<CatalogName>"` to either script if you'd rather target a separate LocalDB catalog instead of the working database.
 
 Schema creation isn't a separate step — EF6's migrations-based initializer runs automatically the moment the tool opens its first `RepairShopContext`.
 
