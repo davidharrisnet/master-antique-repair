@@ -230,6 +230,40 @@ Targets the live app database by default; pass `-Database "<CatalogName>"` (or `
 
 Targets the live app database by default; pass `-Database "<CatalogName>"` for a different catalog. Rebuild afterward with `.\Scripts\Initialize-Database.ps1` (or F5), then re-seed if wanted. The detach must happen before the files are deleted — deleting first leaves a stale LocalDB catalog entry, and the next attach fails with `Cannot attach the file ... as database ...`; the script handles the ordering.
 
+## Regression seed data
+
+`Scripts/Seed-RegressionData.ps1` populates a fresh database with a fixed, deterministic dataset — 1 Manager, 3 Employees, 8 Customers, and 24 Tickets — via the real domain/service methods (so validation and audit logging behave exactly like production), then patches every timestamp to a fixed offset from the moment the script runs. Re-running it against a freshly reset database always produces identical counts, so the resulting `AuditLogs`/`Tickets`/`Comments` rows can be used as a regression baseline.
+
+Requires an empty database — it checks first and refuses to run otherwise, since seeding on top of existing data would not produce repeatable counts. Recommended: run it against a dedicated database, not the live dev one:
+
+```
+.\Scripts\Reset-Database.ps1 -Database MasterAntiqueRepairTest
+.\Scripts\Seed-RegressionData.ps1 -Database MasterAntiqueRepairTest
+```
+
+Schema creation isn't a separate step — EF6's migrations-based initializer runs automatically the moment the tool opens its first `RepairShopContext`.
+
+Each of the 8 customers submits exactly 3 tickets: one ends `COMPLETED` (with a completion comment plus a separate follow-up comment), one ends `INPROGRESS` (assigned, never completed), one stays `SUBMITTED` (never assigned). Ticket assignment: employee1 ← customers {1,4,7}, employee2 ← customers {2,5,8}, employee3 ← customers {3,6} (employee3 ends up with 4 tickets, the other two get 6 each — uneven but exact). See "Regression test accounts" below for the seeded login credentials.
+
+Expected baseline counts (exact and permanent — verifiable via direct `AuditLogs`/`Tickets`/`Comments` queries any number of days after seeding):
+
+| Metric | Count |
+|---|---|
+| AuditLog: CreateUser | 11 |
+| AuditLog: CreateTicket | 24 |
+| AuditLog: AssignTicket | 16 |
+| AuditLog: CompleteTicket | 8 |
+| AuditLog: AddComment | 8 |
+| **AuditLog total** | **67** |
+| Comments table rows | 16 |
+| Tickets: SUBMITTED | 8 |
+| Tickets: INPROGRESS | 8 |
+| Tickets: COMPLETED | 8 |
+
+The Manager itself has no `CreateUser` audit row — there's no `AddManager` service path to log it through, matching production (Managers are never self-service-created either).
+
+**`/Metrics` panel caveat**: `MetricsService.GetSummary()` computes everything live from a rolling 7-day window (`today.AddDays(-6)` through now) — nothing is cached. This seed's timestamps are computed as offsets from the moment the script runs (e.g. "completed 1 day ago"), not fixed calendar dates, specifically so they always fall inside that window no matter what day you seed on. The table above stays checkable directly against the database on any future date; only what shows up on the `/Metrics` page itself is time-relative, and will stop matching once the seed run is more than about a week old (re-seed to refresh it).
+
 ## Security
 
 This app went through an explicit security review pass during development. Full narrative detail (what was found, exactly how it was fixed, and why) lives in `claude.log` — this section is the summary of what's in place today.
@@ -253,3 +287,24 @@ This app went through an explicit security review pass during development. Full 
 - Password reset has no email/SMTP behind it — the reset link is shown directly on the `Forgot Password` page, which only works because the requester is also the viewer (fine for local/dev use; a real deployment needs to swap that one line for an actual email send).
 - `IpThrottle`'s rate-limiting state is in-memory per process — it resets on an app restart and wouldn't be shared across server instances if this app were ever scaled out.
 - No UI path exists to create a Manager account — must be seeded (`Scripts/Seed-InitialUsers.ps1`) or inserted directly.
+
+## Regression test accounts
+
+Accounts created by `Scripts/Seed-RegressionData.ps1` (see "Regression seed data" above) — same `{Role}Pass...!` convention as the initial-accounts seed, extended with a repeated-digit numbering scheme for the extra Employee/Customer accounts this dataset needs:
+
+| Account | Password |
+|---|---|
+| `manager` | `ManagerPass123!` |
+| `employee1` | `EmployeePass111!` |
+| `employee2` | `EmployeePass222!` |
+| `employee3` | `EmployeePass333!` |
+| `customer1` | `CustomerPass111!` |
+| `customer2` | `CustomerPass222!` |
+| `customer3` | `CustomerPass333!` |
+| `customer4` | `CustomerPass444!` |
+| `customer5` | `CustomerPass555!` |
+| `customer6` | `CustomerPass666!` |
+| `customer7` | `CustomerPass777!` |
+| `customer8` | `CustomerPass888!` |
+
+These accounts are only created by `Seed-RegressionData.ps1` on a dedicated regression database — they're independent of (and use different passwords than) `Seed-InitialUsers.ps1`'s `manager`/`employee1`/`employee2` accounts, since the two scripts are meant for different databases and are never expected to seed the same one.

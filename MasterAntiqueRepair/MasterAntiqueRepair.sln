@@ -30,6 +30,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MasterAntiqueRepairData", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MasterAntiqueRepairScratch", "MasterAntiqueRepairScratch\MasterAntiqueRepairScratch.csproj", "{D2A7924F-0E67-44E6-98A6-1CC8BEC1CE14}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MasterAntiqueRepairSeed", "MasterAntiqueRepairSeed\MasterAntiqueRepairSeed.csproj", "{D338A701-D4F2-486E-B014-859E3D0DC27A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,6 +50,10 @@ Global
 		{D2A7924F-0E67-44E6-98A6-1CC8BEC1CE14}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D2A7924F-0E67-44E6-98A6-1CC8BEC1CE14}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D2A7924F-0E67-44E6-98A6-1CC8BEC1CE14}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D338A701-D4F2-486E-B014-859E3D0DC27A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D338A701-D4F2-486E-B014-859E3D0DC27A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D338A701-D4F2-486E-B014-859E3D0DC27A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D338A701-D4F2-486E-B014-859E3D0DC27A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -13,9 +13,13 @@ namespace MasterAntiqueRepair
         private readonly RepairShopContext _db;
         private readonly UserRepository _users;
 
-        public AccountService()
+        public AccountService() : this(new RepairShopContext())
         {
-            _db = new RepairShopContext();
+        }
+
+        public AccountService(RepairShopContext db)
+        {
+            _db = db;
             _users = new UserRepository(_db);
         }
 

@@ -6,6 +6,8 @@ namespace MasterAntiqueRepair
     {
         public RepairShopContext() : base("DefaultConnection") { }
 
+        public RepairShopContext(string nameOrConnectionString) : base(nameOrConnectionString) { }
+
         public DbSet<User> Users { get; set; }
 
         public DbSet<Ticket> Tickets { get; set; }

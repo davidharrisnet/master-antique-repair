@@ -10,9 +10,13 @@ namespace MasterAntiqueRepair
         private readonly TicketRepository _tickets;
         private readonly UserRepository _users;
 
-        public CommentService()
+        public CommentService() : this(new RepairShopContext())
         {
-            _db = new RepairShopContext();
+        }
+
+        public CommentService(RepairShopContext db)
+        {
+            _db = db;
             _tickets = new TicketRepository(_db);
             _users = new UserRepository(_db);
         }
