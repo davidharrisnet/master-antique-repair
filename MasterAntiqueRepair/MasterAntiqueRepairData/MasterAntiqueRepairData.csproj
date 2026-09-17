@@ -62,6 +62,20 @@
     <Compile Include="App_Code\PasswordResetToken.cs" />
     <Compile Include="App_Code\RepairShopContext.cs" />
     <Compile Include="App_Code\State.cs" />
+    <Compile Include="App_Code\Repositories\TicketRepository.cs" />
+    <Compile Include="App_Code\Repositories\UserRepository.cs" />
+    <Compile Include="App_Code\Repositories\CommentRepository.cs" />
+    <Compile Include="App_Code\Repositories\AuditLogRepository.cs" />
+    <Compile Include="App_Code\Repositories\PasswordResetTokenRepository.cs" />
+    <Compile Include="App_Code\Services\MetricsSummary.cs" />
+    <Compile Include="App_Code\Services\MetricsService.cs" />
+    <Compile Include="App_Code\Services\TicketService.cs" />
+    <Compile Include="App_Code\Services\CommentService.cs" />
+    <Compile Include="App_Code\Services\AccountService.cs" />
+    <Compile Include="App_Code\Services\CommentSearchResult.cs" />
+    <Compile Include="App_Code\Services\SearchService.cs" />
+    <Compile Include="App_Code\Services\AuditLogService.cs" />
+    <Compile Include="App_Code\Services\EntityNotFoundException.cs" />
     <Compile Include="Migrations\RepairShop\202609101537112_InitialCreate.cs" />
     <Compile Include="Migrations\RepairShop\202609101537112_InitialCreate.designer.cs">
       <DependentUpon>202609101537112_InitialCreate.cs</DependentUpon>

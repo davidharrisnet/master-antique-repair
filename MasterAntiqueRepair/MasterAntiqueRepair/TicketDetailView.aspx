@@ -105,7 +105,9 @@
     </asp:Panel>
 
     <asp:Panel runat="server" ID="CustomerPanel" Visible="false">
-        <h4>Customer #<asp:Literal runat="server" ID="CustomerIdLiteral" Mode="Encode" /></h4>
+        <h4>Customer #<asp:Literal runat="server" ID="CustomerIdLiteral" Mode="Encode" />
+            <asp:Label runat="server" ID="CustomerDeletedLabel" CssClass="label label-default" Text="Deleted" Visible="false" />
+        </h4>
         <dl class="dl-horizontal">
             <dt>Name</dt>
             <dd><asp:Literal runat="server" ID="CustomerNameLiteral" Mode="Encode" /></dd>
@@ -162,7 +164,9 @@
     </asp:Panel>
 
     <asp:Panel runat="server" ID="EmployeePanel" Visible="false">
-        <h4>Employee #<asp:Literal runat="server" ID="EmployeeIdLiteral" Mode="Encode" /></h4>
+        <h4>Employee #<asp:Literal runat="server" ID="EmployeeIdLiteral" Mode="Encode" />
+            <asp:Label runat="server" ID="EmployeeDeletedLabel" CssClass="label label-default" Text="Deleted" Visible="false" />
+        </h4>
         <dl class="dl-horizontal">
             <dt>Name</dt>
             <dd><asp:Literal runat="server" ID="EmployeeNameLiteral" Mode="Encode" /></dd>

@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Web.UI;
 using MasterAntiqueRepair;
 
@@ -24,18 +23,12 @@ public partial class SubmitRepair : Page
 
         var customerId = RepairAuthHelper.GetCurrentUserId();
 
-        using (var db = new RepairShopContext())
+        using (var service = new TicketService())
         {
-            var customer = db.Users.OfType<Customer>().FirstOrDefault(c => c.Id == customerId);
-            if (customer == null)
-            {
-                return;
-            }
-
             Ticket ticket;
             try
             {
-                ticket = Ticket.CreateSubmitted(Description.Text, customer);
+                ticket = service.SubmitTicket(customerId, Description.Text);
             }
             catch (ArgumentException ex)
             {
@@ -44,11 +37,10 @@ public partial class SubmitRepair : Page
                 return;
             }
 
-            db.Tickets.Add(ticket);
-            db.SaveChanges();
-
-            AuditLogger.Log(db, customer, AuditLog.ActionType.CreateTicket, AuditLog.EntityKind.Ticket, ticket.Id);
-            db.SaveChanges();
+            if (ticket == null)
+            {
+                return;
+            }
         }
 
         Response.Redirect("~/CustomerView");

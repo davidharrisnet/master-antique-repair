@@ -1,5 +1,4 @@
 using System;
-using System.Data.Entity;
 using System.Linq;
 using System.Web;
 using System.Web.UI;
@@ -17,35 +16,38 @@ public partial class TicketDetailView : Page
 
         if (!IsPostBack)
         {
-            BindTicketList();
-            BindCustomerList();
-            BindEmployeeList();
-
-            var idParam = Request.QueryString["id"];
-            int id;
-            if (!string.IsNullOrEmpty(idParam) && int.TryParse(idParam, out id))
+            using (var service = new SearchService())
             {
-                TicketIdText.Text = id.ToString();
-                SelectInDropDown(TicketIdDropDown, id);
-                ShowTicket(id);
-            }
+                BindTicketList(service);
+                BindCustomerList(service);
+                BindEmployeeList(service);
 
-            var customerIdParam = Request.QueryString["customerId"];
-            int customerId;
-            if (!string.IsNullOrEmpty(customerIdParam) && int.TryParse(customerIdParam, out customerId))
-            {
-                CustomerIdText.Text = customerId.ToString();
-                SelectInDropDown(CustomerIdDropDown, customerId);
-                ShowCustomer(customerId);
-            }
+                var idParam = Request.QueryString["id"];
+                int id;
+                if (!string.IsNullOrEmpty(idParam) && int.TryParse(idParam, out id))
+                {
+                    TicketIdText.Text = id.ToString();
+                    SelectInDropDown(TicketIdDropDown, id);
+                    ShowTicket(service, id);
+                }
 
-            var employeeIdParam = Request.QueryString["employeeId"];
-            int employeeId;
-            if (!string.IsNullOrEmpty(employeeIdParam) && int.TryParse(employeeIdParam, out employeeId))
-            {
-                EmployeeIdText.Text = employeeId.ToString();
-                SelectInDropDown(EmployeeIdDropDown, employeeId);
-                ShowEmployee(employeeId);
+                var customerIdParam = Request.QueryString["customerId"];
+                int customerId;
+                if (!string.IsNullOrEmpty(customerIdParam) && int.TryParse(customerIdParam, out customerId))
+                {
+                    CustomerIdText.Text = customerId.ToString();
+                    SelectInDropDown(CustomerIdDropDown, customerId);
+                    ShowCustomer(service, customerId);
+                }
+
+                var employeeIdParam = Request.QueryString["employeeId"];
+                int employeeId;
+                if (!string.IsNullOrEmpty(employeeIdParam) && int.TryParse(employeeIdParam, out employeeId))
+                {
+                    EmployeeIdText.Text = employeeId.ToString();
+                    SelectInDropDown(EmployeeIdDropDown, employeeId);
+                    ShowEmployee(service, employeeId);
+                }
             }
         }
 
@@ -96,23 +98,20 @@ public partial class TicketDetailView : Page
         }
     }
 
-    private void BindTicketList()
+    private void BindTicketList(SearchService service)
     {
-        using (var db = new RepairShopContext())
-        {
-            var tickets = db.Tickets.OrderBy(t => t.Id).ToList();
+        var tickets = service.GetTicketDropdownList();
 
-            TicketIdDropDown.Items.Clear();
-            TicketIdDropDown.Items.Add(new ListItem("-- Select a ticket --", ""));
-            foreach (var ticket in tickets)
+        TicketIdDropDown.Items.Clear();
+        TicketIdDropDown.Items.Add(new ListItem("-- Select a ticket --", ""));
+        foreach (var ticket in tickets)
+        {
+            var description = ticket.Description ?? "";
+            if (description.Length > 40)
             {
-                var description = ticket.Description ?? "";
-                if (description.Length > 40)
-                {
-                    description = description.Substring(0, 40) + "...";
-                }
-                TicketIdDropDown.Items.Add(new ListItem("#" + ticket.Id + " - " + description, ticket.Id.ToString()));
+                description = description.Substring(0, 40) + "...";
             }
+            TicketIdDropDown.Items.Add(new ListItem("#" + ticket.Id + " - " + description, ticket.Id.ToString()));
         }
     }
 
@@ -125,7 +124,10 @@ public partial class TicketDetailView : Page
         }
 
         TicketIdText.Text = id.ToString();
-        ShowTicket(id);
+        using (var service = new SearchService())
+        {
+            ShowTicket(service, id);
+        }
     }
 
     protected void Search_Click(object sender, EventArgs e)
@@ -134,7 +136,10 @@ public partial class TicketDetailView : Page
         if (int.TryParse(TicketIdText.Text, out id))
         {
             SelectInDropDown(TicketIdDropDown, id);
-            ShowTicket(id);
+            using (var service = new SearchService())
+            {
+                ShowTicket(service, id);
+            }
         }
         else
         {
@@ -143,18 +148,16 @@ public partial class TicketDetailView : Page
         }
     }
 
-    private void BindCustomerList()
+    private void BindCustomerList(SearchService service)
     {
-        using (var db = new RepairShopContext())
-        {
-            var customers = db.Users.OfType<Customer>().OrderBy(c => c.Id).ToList();
+        var customers = service.GetCustomerDropdownList();
 
-            CustomerIdDropDown.Items.Clear();
-            CustomerIdDropDown.Items.Add(new ListItem("-- Select a customer --", ""));
-            foreach (var customer in customers)
-            {
-                CustomerIdDropDown.Items.Add(new ListItem("#" + customer.Id + " - " + customer.Name, customer.Id.ToString()));
-            }
+        CustomerIdDropDown.Items.Clear();
+        CustomerIdDropDown.Items.Add(new ListItem("-- Select a customer --", ""));
+        foreach (var customer in customers)
+        {
+            var label = "#" + customer.Id + " - " + customer.Name + (customer.IsDeleted ? " (deleted)" : "");
+            CustomerIdDropDown.Items.Add(new ListItem(label, customer.Id.ToString()));
         }
     }
 
@@ -167,7 +170,10 @@ public partial class TicketDetailView : Page
         }
 
         CustomerIdText.Text = id.ToString();
-        ShowCustomer(id);
+        using (var service = new SearchService())
+        {
+            ShowCustomer(service, id);
+        }
     }
 
     protected void CustomerSearch_Click(object sender, EventArgs e)
@@ -176,7 +182,10 @@ public partial class TicketDetailView : Page
         if (int.TryParse(CustomerIdText.Text, out id))
         {
             SelectInDropDown(CustomerIdDropDown, id);
-            ShowCustomer(id);
+            using (var service = new SearchService())
+            {
+                ShowCustomer(service, id);
+            }
         }
         else
         {
@@ -185,48 +194,40 @@ public partial class TicketDetailView : Page
         }
     }
 
-    private void ShowCustomer(int id)
+    private void ShowCustomer(SearchService service, int id)
     {
-        using (var db = new RepairShopContext())
+        var customer = service.GetCustomerById(id);
+        if (customer == null)
         {
-            var customer = db.Users.OfType<Customer>().FirstOrDefault(c => c.Id == id);
-            if (customer == null)
-            {
-                CustomerPanel.Visible = false;
-                CustomerNotFoundPanel.Visible = true;
-                return;
-            }
-
-            CustomerNotFoundPanel.Visible = false;
-            CustomerPanel.Visible = true;
-
-            CustomerIdLiteral.Text = customer.Id.ToString();
-            CustomerNameLiteral.Text = customer.Name;
-            CustomerCreatedLiteral.Text = customer.CreatedAt.ToString("g");
-
-            // Customer doesn't have its own Tickets collection - the inherited User.Tickets
-            // maps to Ticket.User (the assigned employee), a separate relationship from
-            // Ticket.Customer (who submitted it). Look submitted tickets up directly, same
-            // workaround as Manager.GetCustomersWithTickets.
-            var tickets = db.Tickets.Where(t => t.Customer.Id == id).OrderBy(t => t.Id).ToList();
-            CustomerTicketsRepeater.DataSource = tickets;
-            CustomerTicketsRepeater.DataBind();
-            NoCustomerTicketsLabel.Visible = tickets.Count == 0;
+            CustomerPanel.Visible = false;
+            CustomerNotFoundPanel.Visible = true;
+            return;
         }
+
+        CustomerNotFoundPanel.Visible = false;
+        CustomerPanel.Visible = true;
+
+        CustomerIdLiteral.Text = customer.Id.ToString();
+        CustomerNameLiteral.Text = customer.Name;
+        CustomerCreatedLiteral.Text = customer.CreatedAt.ToString("g");
+        CustomerDeletedLabel.Visible = customer.IsDeleted;
+
+        var tickets = service.GetTicketsForCustomer(id);
+        CustomerTicketsRepeater.DataSource = tickets;
+        CustomerTicketsRepeater.DataBind();
+        NoCustomerTicketsLabel.Visible = tickets.Count == 0;
     }
 
-    private void BindEmployeeList()
+    private void BindEmployeeList(SearchService service)
     {
-        using (var db = new RepairShopContext())
-        {
-            var employees = db.Users.OfType<Employee>().OrderBy(emp => emp.Id).ToList();
+        var employees = service.GetEmployeeDropdownList();
 
-            EmployeeIdDropDown.Items.Clear();
-            EmployeeIdDropDown.Items.Add(new ListItem("-- Select an employee --", ""));
-            foreach (var employee in employees)
-            {
-                EmployeeIdDropDown.Items.Add(new ListItem("#" + employee.Id + " - " + employee.Name, employee.Id.ToString()));
-            }
+        EmployeeIdDropDown.Items.Clear();
+        EmployeeIdDropDown.Items.Add(new ListItem("-- Select an employee --", ""));
+        foreach (var employee in employees)
+        {
+            var label = "#" + employee.Id + " - " + employee.Name + (employee.IsDeleted ? " (deleted)" : "");
+            EmployeeIdDropDown.Items.Add(new ListItem(label, employee.Id.ToString()));
         }
     }
 
@@ -239,7 +240,10 @@ public partial class TicketDetailView : Page
         }
 
         EmployeeIdText.Text = id.ToString();
-        ShowEmployee(id);
+        using (var service = new SearchService())
+        {
+            ShowEmployee(service, id);
+        }
     }
 
     protected void EmployeeSearch_Click(object sender, EventArgs e)
@@ -248,7 +252,10 @@ public partial class TicketDetailView : Page
         if (int.TryParse(EmployeeIdText.Text, out id))
         {
             SelectInDropDown(EmployeeIdDropDown, id);
-            ShowEmployee(id);
+            using (var service = new SearchService())
+            {
+                ShowEmployee(service, id);
+            }
         }
         else
         {
@@ -257,93 +264,76 @@ public partial class TicketDetailView : Page
         }
     }
 
-    private void ShowEmployee(int id)
+    private void ShowEmployee(SearchService service, int id)
     {
-        using (var db = new RepairShopContext())
+        var employee = service.GetEmployeeById(id);
+        if (employee == null)
         {
-            var employee = db.Users.OfType<Employee>().FirstOrDefault(emp => emp.Id == id);
-            if (employee == null)
-            {
-                EmployeePanel.Visible = false;
-                EmployeeNotFoundPanel.Visible = true;
-                return;
-            }
-
-            EmployeeNotFoundPanel.Visible = false;
-            EmployeePanel.Visible = true;
-
-            EmployeeIdLiteral.Text = employee.Id.ToString();
-            EmployeeNameLiteral.Text = employee.Name;
-            EmployeeCreatedLiteral.Text = employee.CreatedAt.ToString("g");
-
-            var tickets = employee.Tickets.OrderBy(t => t.Id).ToList();
-            EmployeeTicketsRepeater.DataSource = tickets;
-            EmployeeTicketsRepeater.DataBind();
-            NoEmployeeTicketsLabel.Visible = tickets.Count == 0;
+            EmployeePanel.Visible = false;
+            EmployeeNotFoundPanel.Visible = true;
+            return;
         }
+
+        EmployeeNotFoundPanel.Visible = false;
+        EmployeePanel.Visible = true;
+
+        EmployeeIdLiteral.Text = employee.Id.ToString();
+        EmployeeNameLiteral.Text = employee.Name;
+        EmployeeCreatedLiteral.Text = employee.CreatedAt.ToString("g");
+        EmployeeDeletedLabel.Visible = employee.IsDeleted;
+
+        var tickets = service.GetTicketsForEmployee(id);
+        EmployeeTicketsRepeater.DataSource = tickets;
+        EmployeeTicketsRepeater.DataBind();
+        NoEmployeeTicketsLabel.Visible = tickets.Count == 0;
     }
 
-    private void ShowTicket(int id)
+    private void ShowTicket(SearchService service, int id)
     {
-        using (var db = new RepairShopContext())
+        var ticket = service.GetTicketDetail(id);
+        if (ticket == null)
         {
-            var ticket = db.Tickets
-                .Include(t => t.Customer)
-                .Include(t => t.User)
-                .FirstOrDefault(t => t.Id == id);
-            if (ticket == null)
-            {
-                TicketPanel.Visible = false;
-                NotFoundPanel.Visible = true;
-                return;
-            }
-
-            NotFoundPanel.Visible = false;
-            TicketPanel.Visible = true;
-
-            TicketIdLiteral.Text = ticket.Id.ToString();
-            DescriptionLiteral.Text = ticket.Description;
-            StateLiteral.Text = "<span class=\"label " + UiHelpers.StatusLabelClass(ticket.State) + "\">" + ticket.State + "</span>";
-
-            CustomerLiteral.Text = ticket.Customer != null
-                ? BuildPersonLink(ticket.Customer.Id, ticket.Customer.Name, "customerId")
-                : "(none)";
-
-            AssignedToLiteral.Text = ticket.User != null
-                ? BuildPersonLink(ticket.User.Id, ticket.User.Name, "employeeId")
-                : "(unassigned)";
-
-            EmployeeCommentsAuthorLiteral.Text = ticket.User != null
-                ? "(" + BuildPersonLink(ticket.User.Id, ticket.User.Name, "employeeId") + ")"
-                : "";
-
-            CustomerCommentsAuthorLiteral.Text = ticket.Customer != null
-                ? "(" + BuildPersonLink(ticket.Customer.Id, ticket.Customer.Name, "customerId") + ")"
-                : "";
-
-            SubmittedLiteral.Text = ticket.SubmittedDate.HasValue ? ticket.SubmittedDate.Value.ToString("g") : "";
-            AssignedLiteral.Text = ticket.AssignedDate.HasValue ? ticket.AssignedDate.Value.ToString("g") : "";
-            CompletedLiteral.Text = ticket.CompletedDate.HasValue ? ticket.CompletedDate.Value.ToString("g") : "";
-
-            var employeeComments = ticket.Comments.Where(c => c.User is Employee).OrderBy(c => c.CreatedAt).ToList();
-            EmployeeCommentsRepeater.DataSource = employeeComments;
-            EmployeeCommentsRepeater.DataBind();
-            NoEmployeeCommentsLabel.Visible = employeeComments.Count == 0;
-
-            var customerComments = ticket.Comments.Where(c => c.User is Customer).OrderBy(c => c.CreatedAt).ToList();
-            CustomerCommentsRepeater.DataSource = customerComments;
-            CustomerCommentsRepeater.DataBind();
-            NoCustomerCommentsLabel.Visible = customerComments.Count == 0;
+            TicketPanel.Visible = false;
+            NotFoundPanel.Visible = true;
+            return;
         }
-    }
 
-    private class CommentSearchResult
-    {
-        public string Type { get; set; }
-        public string Text { get; set; }
-        public string AuthorName { get; set; }
-        public DateTime Posted { get; set; }
-        public int TicketId { get; set; }
+        NotFoundPanel.Visible = false;
+        TicketPanel.Visible = true;
+
+        TicketIdLiteral.Text = ticket.Id.ToString();
+        DescriptionLiteral.Text = ticket.Description;
+        StateLiteral.Text = "<span class=\"label " + UiHelpers.StatusLabelClass(ticket.State) + "\">" + ticket.State + "</span>";
+
+        CustomerLiteral.Text = ticket.Customer != null
+            ? BuildPersonLink(ticket.Customer.Id, ticket.Customer.Name, "customerId")
+            : "(none)";
+
+        AssignedToLiteral.Text = ticket.User != null
+            ? BuildPersonLink(ticket.User.Id, ticket.User.Name, "employeeId")
+            : "(unassigned)";
+
+        EmployeeCommentsAuthorLiteral.Text = ticket.User != null
+            ? "(" + BuildPersonLink(ticket.User.Id, ticket.User.Name, "employeeId") + ")"
+            : "";
+
+        CustomerCommentsAuthorLiteral.Text = ticket.Customer != null
+            ? "(" + BuildPersonLink(ticket.Customer.Id, ticket.Customer.Name, "customerId") + ")"
+            : "";
+
+        SubmittedLiteral.Text = ticket.SubmittedDate.HasValue ? ticket.SubmittedDate.Value.ToString("g") : "";
+        AssignedLiteral.Text = ticket.AssignedDate.HasValue ? ticket.AssignedDate.Value.ToString("g") : "";
+        CompletedLiteral.Text = ticket.CompletedDate.HasValue ? ticket.CompletedDate.Value.ToString("g") : "";
+
+        var employeeComments = ticket.Comments.Where(c => c.User is Employee).OrderBy(c => c.CreatedAt).ToList();
+        EmployeeCommentsRepeater.DataSource = employeeComments;
+        EmployeeCommentsRepeater.DataBind();
+        NoEmployeeCommentsLabel.Visible = employeeComments.Count == 0;
+
+        var customerComments = ticket.Comments.Where(c => c.User is Customer).OrderBy(c => c.CreatedAt).ToList();
+        CustomerCommentsRepeater.DataSource = customerComments;
+        CustomerCommentsRepeater.DataBind();
+        NoCustomerCommentsLabel.Visible = customerComments.Count == 0;
     }
 
     protected void CommentSearch_Click(object sender, EventArgs e)
@@ -361,38 +351,9 @@ public partial class TicketDetailView : Page
 
         CommentSearchErrorPanel.Visible = false;
 
-        using (var db = new RepairShopContext())
+        using (var service = new SearchService())
         {
-            var commentMatches = db.Comments
-                .Include(c => c.User)
-                .Where(c => c.Text.Contains(searchText))
-                .ToList()
-                .Select(c => new CommentSearchResult
-                {
-                    Type = "Comment",
-                    Text = c.Text,
-                    AuthorName = c.User.Name,
-                    Posted = c.CreatedAt,
-                    TicketId = c.TicketId
-                });
-
-            var descriptionMatches = db.Tickets
-                .Include(t => t.Customer)
-                .Where(t => t.Description.Contains(searchText))
-                .ToList()
-                .Select(t => new CommentSearchResult
-                {
-                    Type = "Ticket Description",
-                    Text = t.Description,
-                    AuthorName = t.Customer.Name,
-                    Posted = t.SubmittedDate ?? DateTime.MinValue,
-                    TicketId = t.Id
-                });
-
-            var results = commentMatches
-                .Concat(descriptionMatches)
-                .OrderByDescending(r => r.Posted)
-                .ToList();
+            var results = service.SearchComments(searchText);
 
             CommentSearchRepeater.DataSource = results;
             CommentSearchRepeater.DataBind();

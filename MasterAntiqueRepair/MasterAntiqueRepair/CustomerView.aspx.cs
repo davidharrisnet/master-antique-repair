@@ -23,12 +23,9 @@ public partial class CustomerView : Page
     {
         var customerId = RepairAuthHelper.GetCurrentUserId();
 
-        using (var db = new RepairShopContext())
+        using (var service = new TicketService())
         {
-            MyTicketsGrid.DataSource = db.Tickets
-                .Where(o => o.Customer != null && o.Customer.Id == customerId)
-                .OrderByDescending(o => o.Id)
-                .ToList();
+            MyTicketsGrid.DataSource = service.GetMyTickets(customerId);
             MyTicketsGrid.DataBind();
         }
     }
@@ -61,105 +58,23 @@ public partial class CustomerView : Page
 
         var customerId = RepairAuthHelper.GetCurrentUserId();
 
-        using (var db = new RepairShopContext())
+        using (var service = new CommentService())
         {
-            var customer = db.Users.OfType<Customer>().FirstOrDefault(c => c.Id == customerId);
-            var ticket = db.Tickets.FirstOrDefault(t => t.Id == ticketId && t.Customer != null && t.Customer.Id == customerId);
-
-            if (customer != null && ticket != null)
+            try
             {
-                try
-                {
-                    var addedComment = customer.AddComment(ticket, NewCommentText.Text);
-                    db.SaveChanges();
-
-                    AuditLogger.Log(db, customer, AuditLog.ActionType.AddComment, AuditLog.EntityKind.Comment, addedComment.Id);
-                    db.SaveChanges();
-                }
-                catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
-                {
-                    CommentErrorLabel.Text = ex.Message;
-                    CommentErrorLabel.Visible = true;
-                    return;
-                }
+                service.AddCustomerComment(customerId, ticketId, NewCommentText.Text);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
+            {
+                CommentErrorLabel.Text = ex.Message;
+                CommentErrorLabel.Visible = true;
+                return;
             }
         }
 
         NewCommentText.Text = string.Empty;
         CommentTicketId.Value = string.Empty;
         CommentErrorLabel.Visible = false;
-        BindGrid();
-    }
-
-    protected void CommentsRepeater_ItemCommand(object sender, RepeaterCommandEventArgs e)
-    {
-        if (e.CommandName != "DeleteComment")
-        {
-            return;
-        }
-
-        var commentId = Convert.ToInt32(e.CommandArgument);
-        var customerId = RepairAuthHelper.GetCurrentUserId();
-
-        using (var db = new RepairShopContext())
-        {
-            var customer = db.Users.OfType<Customer>().FirstOrDefault(c => c.Id == customerId);
-            var comment = db.Comments.FirstOrDefault(c => c.Id == commentId);
-
-            if (customer != null && comment != null)
-            {
-                try
-                {
-                    customer.DeleteComment(comment);
-                    AuditLogger.Log(db, customer, AuditLog.ActionType.DeleteComment, AuditLog.EntityKind.Comment, comment.Id);
-                    db.Comments.Remove(comment);
-                    db.SaveChanges();
-                }
-                catch (InvalidOperationException)
-                {
-                    // Not this customer's comment - ignore.
-                }
-            }
-        }
-
-        BindGrid();
-    }
-
-    protected void SaveEditComment_Click(object sender, EventArgs e)
-    {
-        int commentId;
-        if (!int.TryParse(EditCommentId.Value, out commentId))
-        {
-            return;
-        }
-
-        var customerId = RepairAuthHelper.GetCurrentUserId();
-
-        using (var db = new RepairShopContext())
-        {
-            var customer = db.Users.OfType<Customer>().FirstOrDefault(c => c.Id == customerId);
-            var comment = db.Comments.FirstOrDefault(c => c.Id == commentId);
-
-            if (customer != null && comment != null)
-            {
-                try
-                {
-                    customer.EditComment(comment, EditCommentText.Text);
-                    AuditLogger.Log(db, customer, AuditLog.ActionType.EditComment, AuditLog.EntityKind.Comment, comment.Id);
-                    db.SaveChanges();
-                }
-                catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
-                {
-                    EditCommentErrorLabel.Text = ex.Message;
-                    EditCommentErrorLabel.Visible = true;
-                    return;
-                }
-            }
-        }
-
-        EditCommentText.Text = string.Empty;
-        EditCommentId.Value = string.Empty;
-        EditCommentErrorLabel.Visible = false;
         BindGrid();
     }
 }

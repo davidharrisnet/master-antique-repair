@@ -1,6 +1,4 @@
 using System;
-using System.Data.Entity;
-using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using MasterAntiqueRepair;
@@ -22,17 +20,12 @@ public partial class AuditLogView : Page
 
     private void BindGrid()
     {
-        using (var db = new RepairShopContext())
+        int entityId;
+        int? entityIdFilter = int.TryParse(EntityIdSearchText.Text, out entityId) ? entityId : (int?)null;
+
+        using (var service = new AuditLogService())
         {
-            var query = db.AuditLogs.Include(a => a.User).AsQueryable();
-
-            int entityId;
-            if (int.TryParse(EntityIdSearchText.Text, out entityId))
-            {
-                query = query.Where(a => a.EntityId == entityId);
-            }
-
-            AuditLogGrid.DataSource = query.OrderByDescending(a => a.Timestamp).ToList();
+            AuditLogGrid.DataSource = service.GetLogs(entityIdFilter);
             AuditLogGrid.DataBind();
         }
     }
@@ -54,12 +47,12 @@ public partial class AuditLogView : Page
         }
         else if (log.EntityType == AuditLog.EntityKind.Comment)
         {
-            using (var db = new RepairShopContext())
+            using (var service = new AuditLogService())
             {
-                var comment = db.Comments.FirstOrDefault(c => c.Id == log.EntityId);
-                if (comment != null)
+                var ticketId = service.GetTicketIdForComment(log.EntityId);
+                if (ticketId.HasValue)
                 {
-                    viewLink.NavigateUrl = "~/TicketDetailView.aspx?id=" + comment.TicketId;
+                    viewLink.NavigateUrl = "~/TicketDetailView.aspx?id=" + ticketId.Value;
                     viewLink.Visible = true;
                 }
             }

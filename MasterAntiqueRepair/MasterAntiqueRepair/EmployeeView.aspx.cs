@@ -21,20 +21,14 @@ public partial class EmployeeView : Page
 
     private void BindGrids()
     {
-        using (var db = new RepairShopContext())
-        {
-            var employeeId = RepairAuthHelper.GetCurrentUserId();
+        var employeeId = RepairAuthHelper.GetCurrentUserId();
 
-            UnassignedGrid.DataSource = db.Tickets
-                .Where(o => o.User == null)
-                .OrderBy(o => o.Id)
-                .ToList();
+        using (var service = new TicketService())
+        {
+            UnassignedGrid.DataSource = service.GetUnassigned();
             UnassignedGrid.DataBind();
 
-            MyTicketsGrid.DataSource = db.Tickets
-                .Where(o => o.User != null && o.User.Id == employeeId)
-                .OrderBy(o => o.Id)
-                .ToList();
+            MyTicketsGrid.DataSource = service.GetAssignedTo(employeeId);
             MyTicketsGrid.DataBind();
         }
     }
@@ -67,105 +61,23 @@ public partial class EmployeeView : Page
 
         var employeeId = RepairAuthHelper.GetCurrentUserId();
 
-        using (var db = new RepairShopContext())
+        using (var service = new CommentService())
         {
-            var employee = db.Users.OfType<Employee>().FirstOrDefault(u => u.Id == employeeId);
-            var ticket = db.Tickets.FirstOrDefault(t => t.Id == ticketId && t.User != null && t.User.Id == employeeId);
-
-            if (employee != null && ticket != null)
+            try
             {
-                try
-                {
-                    var addedComment = employee.AddComment(ticket, NewCommentText.Text);
-                    db.SaveChanges();
-
-                    AuditLogger.Log(db, employee, AuditLog.ActionType.AddComment, AuditLog.EntityKind.Comment, addedComment.Id);
-                    db.SaveChanges();
-                }
-                catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
-                {
-                    CommentErrorLabel.Text = ex.Message;
-                    CommentErrorLabel.Visible = true;
-                    return;
-                }
+                service.AddEmployeeComment(employeeId, ticketId, NewCommentText.Text);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
+            {
+                CommentErrorLabel.Text = ex.Message;
+                CommentErrorLabel.Visible = true;
+                return;
             }
         }
 
         NewCommentText.Text = string.Empty;
         AddCommentTicketId.Value = string.Empty;
         CommentErrorLabel.Visible = false;
-        BindGrids();
-    }
-
-    protected void EmployeeCommentsRepeater_ItemCommand(object sender, RepeaterCommandEventArgs e)
-    {
-        if (e.CommandName != "DeleteComment")
-        {
-            return;
-        }
-
-        var commentId = Convert.ToInt32(e.CommandArgument);
-        var employeeId = RepairAuthHelper.GetCurrentUserId();
-
-        using (var db = new RepairShopContext())
-        {
-            var employee = db.Users.OfType<Employee>().FirstOrDefault(u => u.Id == employeeId);
-            var comment = db.Comments.FirstOrDefault(c => c.Id == commentId);
-
-            if (employee != null && comment != null)
-            {
-                try
-                {
-                    employee.DeleteComment(comment);
-                    AuditLogger.Log(db, employee, AuditLog.ActionType.DeleteComment, AuditLog.EntityKind.Comment, comment.Id);
-                    db.Comments.Remove(comment);
-                    db.SaveChanges();
-                }
-                catch (InvalidOperationException)
-                {
-                    // Not this employee's comment - ignore.
-                }
-            }
-        }
-
-        BindGrids();
-    }
-
-    protected void SaveEditComment_Click(object sender, EventArgs e)
-    {
-        int commentId;
-        if (!int.TryParse(EditCommentId.Value, out commentId))
-        {
-            return;
-        }
-
-        var employeeId = RepairAuthHelper.GetCurrentUserId();
-
-        using (var db = new RepairShopContext())
-        {
-            var employee = db.Users.OfType<Employee>().FirstOrDefault(u => u.Id == employeeId);
-            var comment = db.Comments.FirstOrDefault(c => c.Id == commentId);
-
-            if (employee != null && comment != null)
-            {
-                try
-                {
-                    employee.EditComment(comment, EditCommentText.Text);
-                    AuditLogger.Log(db, employee, AuditLog.ActionType.EditComment, AuditLog.EntityKind.Comment, comment.Id);
-                    db.SaveChanges();
-                }
-                catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException)
-                {
-                    EditCommentErrorLabel.Text = ex.Message;
-                    EditCommentErrorLabel.Visible = true;
-                    return;
-                }
-            }
-        }
-
-        EditCommentText.Text = string.Empty;
-        EditCommentId.Value = string.Empty;
-        EditCommentErrorLabel.Visible = false;
         BindGrids();
     }
 
@@ -179,17 +91,9 @@ public partial class EmployeeView : Page
         var ticketId = Convert.ToInt32(e.CommandArgument);
         var employeeId = RepairAuthHelper.GetCurrentUserId();
 
-        using (var db = new RepairShopContext())
+        using (var service = new TicketService())
         {
-            var employee = db.Users.OfType<Employee>().FirstOrDefault(u => u.Id == employeeId);
-            var ticket = db.Tickets.FirstOrDefault(o => o.Id == ticketId);
-
-            if (employee != null && ticket != null && ticket.User == null)
-            {
-                employee.TakeTicket(ticket);
-                AuditLogger.Log(db, employee, AuditLog.ActionType.AssignTicket, AuditLog.EntityKind.Ticket, ticket.Id);
-                db.SaveChanges();
-            }
+            service.AssignToMe(ticketId, employeeId);
         }
 
         BindGrids();
@@ -206,17 +110,9 @@ public partial class EmployeeView : Page
         var employeeId = RepairAuthHelper.GetCurrentUserId();
         var comment = ModalCommentBox.Text;
 
-        using (var db = new RepairShopContext())
+        using (var service = new TicketService())
         {
-            var employee = db.Users.OfType<Employee>().FirstOrDefault(u => u.Id == employeeId);
-            var ticket = db.Tickets.FirstOrDefault(o => o.Id == ticketId && o.User != null && o.User.Id == employeeId);
-
-            if (employee != null && ticket != null)
-            {
-                employee.CompleteTicket(ticket, comment);
-                AuditLogger.Log(db, employee, AuditLog.ActionType.CompleteTicket, AuditLog.EntityKind.Ticket, ticket.Id);
-                db.SaveChanges();
-            }
+            service.CompleteTicket(ticketId, employeeId, comment);
         }
 
         ModalCommentBox.Text = string.Empty;

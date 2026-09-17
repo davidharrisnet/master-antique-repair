@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Web.UI;
 using MasterAntiqueRepair;
 
@@ -12,10 +11,9 @@ public partial class Account_ResetPassword : Page
             var token = Request.QueryString["token"];
             TokenHidden.Value = token;
 
-            using (var db = new RepairShopContext())
+            using (var service = new AuthService())
             {
-                var resetToken = db.PasswordResetTokens.FirstOrDefault(t => t.Token == token);
-                if (resetToken == null || !resetToken.IsValid())
+                if (!service.IsResetTokenValid(token))
                 {
                     ShowInvalidToken();
                 }
@@ -32,25 +30,16 @@ public partial class Account_ResetPassword : Page
 
         var token = TokenHidden.Value;
 
-        using (var db = new RepairShopContext())
+        using (var service = new AuthService())
         {
-            var resetToken = db.PasswordResetTokens.FirstOrDefault(t => t.Token == token);
-            if (resetToken == null || !resetToken.IsValid())
-            {
-                ShowInvalidToken();
-                return;
-            }
-
-            var user = db.Users.FirstOrDefault(u => u.Id == resetToken.UserId);
-            if (user == null)
-            {
-                ShowInvalidToken();
-                return;
-            }
-
             try
             {
-                user.SetPassword(NewPassword.Text);
+                service.ResetPassword(token, NewPassword.Text);
+            }
+            catch (InvalidOperationException)
+            {
+                ShowInvalidToken();
+                return;
             }
             catch (ArgumentException ex)
             {
@@ -58,17 +47,10 @@ public partial class Account_ResetPassword : Page
                 ErrorMessage.Text = ex.Message;
                 return;
             }
-
-            resetToken.UsedAt = DateTime.Now;
-            user.RecordSuccessfulLogin(); // proving ownership via the emailed/shown link also clears any existing account lockout
-            db.SaveChanges();
-
-            AuditLogger.Log(db, user, AuditLog.ActionType.ResetPassword, AuditLog.EntityKind.User, user.Id);
-            db.SaveChanges();
-
-            FormPanel.Visible = false;
-            SuccessPanel.Visible = true;
         }
+
+        FormPanel.Visible = false;
+        SuccessPanel.Visible = true;
     }
 
     private void ShowInvalidToken()
