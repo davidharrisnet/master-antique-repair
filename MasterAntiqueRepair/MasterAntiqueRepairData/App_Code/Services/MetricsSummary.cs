@@ -11,7 +11,11 @@ namespace MasterAntiqueRepair
         public int PeriodTotal { get; set; }
         public double AveragePerDay { get; set; }
         public double AverageCreatedPerDay { get; set; }
-        public double CreatedClosedRatio { get; set; }
+        public int CreatedInPeriod { get; set; }
+        // Null when CreatedInPeriod is 0 - a completed ticket can have been submitted
+        // before the window started, so "closed this period" doesn't guarantee "created
+        // this period" > 0 the way it used to guarantee the old ratio's denominator.
+        public double? ClosedCreatedRatio { get; set; }
         public DateTime MostProductiveDay { get; set; }
         public int MostProductiveDayCount { get; set; }
         public int QuietDays { get; set; }

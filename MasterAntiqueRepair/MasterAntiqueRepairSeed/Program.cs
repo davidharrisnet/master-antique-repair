@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MasterAntiqueRepair;
@@ -6,19 +7,27 @@ using MasterAntiqueRepair;
 namespace MasterAntiqueRepairSeed
 {
     // One antique item drives a customer's three tickets (A ends COMPLETED, B ends
-    // INPROGRESS, C stays SUBMITTED) plus the completion/follow-up comments on A.
+    // INPROGRESS, C stays SUBMITTED) plus the completion comment and 1-3 follow-up
+    // comments on A (count and wording picked per-customer by the seeded RNG).
     internal class SeedItem
     {
         public string DescriptionA;
         public string DescriptionB;
         public string DescriptionC;
         public string CompletionComment;
-        public string FollowUpComment;
+        public string[] FollowUpComments;
     }
 
     class Program
     {
         private const string ManagerPassword = "ManagerPass123!";
+
+        // Fixed, not time-based: this seeds a single System.Random reused for every
+        // "random" choice below (timing jitter, follow-up comment counts). A fixed seed
+        // means the exact same sequence comes out on every run - looks organic (no
+        // formulaic linear/cyclic pattern to spot), but stays exactly reproducible,
+        // which is the entire point of this tool.
+        private const int RandomSeed = 20250917;
 
         private static readonly string[] EmployeePasswords =
         {
@@ -33,7 +42,12 @@ namespace MasterAntiqueRepairSeed
                 DescriptionB = "Victorian mahogany writing desk — the fold-down writing surface no longer stays latched shut.",
                 DescriptionC = "Victorian mahogany writing desk — leather desktop inlay is cracked and lifting at one corner.",
                 CompletionComment = "Re-glued and dowelled the rear leg joint, replaced the missing brass drawer pull with a period-correct match. Desk is sturdy and level again.",
-                FollowUpComment = "Desk looks wonderful — you can barely tell the leg was ever broken. Thank you!"
+                FollowUpComments = new[]
+                {
+                    "Desk looks wonderful — you can barely tell the leg was ever broken. Thank you!",
+                    "Picked it up today, the drawer pull matches perfectly. Great work.",
+                    "So relieved you could save the original leather inlay too. Much appreciated!"
+                }
             },
             new SeedItem
             {
@@ -41,7 +55,12 @@ namespace MasterAntiqueRepairSeed
                 DescriptionB = "Set of six oak dining chairs — one chair's back spindle is cracked.",
                 DescriptionC = "Set of six oak dining chairs — upholstery on three seats is worn through at the front edge.",
                 CompletionComment = "Reinforced and re-glued the loose seat joints on both chairs with hide glue and corner blocks; no more wobble.",
-                FollowUpComment = "The chairs feel solid again, no creaking at all. Really appreciate the quick turnaround."
+                FollowUpComments = new[]
+                {
+                    "The chairs feel solid again, no creaking at all. Really appreciate the quick turnaround.",
+                    "Used them for a dinner party last night — nobody could tell they'd ever been repaired.",
+                    "Thank you, the whole set finally matches again."
+                }
             },
             new SeedItem
             {
@@ -49,7 +68,12 @@ namespace MasterAntiqueRepairSeed
                 DescriptionB = "Oak grandfather clock — chime mechanism is silent, weights drop too fast.",
                 DescriptionC = "Oak grandfather clock — glass door hinge is loose and door won't latch.",
                 CompletionComment = "Re-glued the escapement pivot and adjusted the beat; pendulum now swings true and keeps time within a minute a week. Reset the chime timing and oiled the movement.",
-                FollowUpComment = "Picked it up this afternoon — the chime is right on time again and the case looks great. Thanks for the careful work!"
+                FollowUpComments = new[]
+                {
+                    "Picked it up this afternoon — the chime is right on time again and the case looks great. Thanks for the careful work!",
+                    "It's been keeping perfect time all week. Couldn't be happier.",
+                    "My grandfather would be proud — thank you for treating it so carefully."
+                }
             },
             new SeedItem
             {
@@ -57,7 +81,12 @@ namespace MasterAntiqueRepairSeed
                 DescriptionB = "Antique vanity table with tri-fold mirror — one drawer is stuck and won't slide open.",
                 DescriptionC = "Antique vanity table with tri-fold mirror — veneer is peeling along the front edge.",
                 CompletionComment = "Replaced the cracked mirror pane with restoration glass and repaired the broken hinge; both side panels swing freely again.",
-                FollowUpComment = "The mirror looks brand new and the hinge is smooth. So glad I didn't have to replace the whole piece."
+                FollowUpComments = new[]
+                {
+                    "The mirror looks brand new and the hinge is smooth. So glad I didn't have to replace the whole piece.",
+                    "It's back in my bedroom and looks stunning. Thank you!",
+                    "Didn't expect the mirror to look this clear again — wonderful job."
+                }
             },
             new SeedItem
             {
@@ -65,7 +94,12 @@ namespace MasterAntiqueRepairSeed
                 DescriptionB = "Cedar jewelry box with inlay lid — the small lock mechanism is jammed.",
                 DescriptionC = "Cedar jewelry box with inlay lid — inlay pattern on the lid has a missing piece near the corner.",
                 CompletionComment = "Reset the hinge screws into filled, redrilled pilot holes so the lid now stays open on its own; tested through a dozen open/close cycles.",
-                FollowUpComment = "The lid stays open perfectly now — such a relief, this box was my grandmother's."
+                FollowUpComments = new[]
+                {
+                    "The lid stays open perfectly now — such a relief, this box was my grandmother's.",
+                    "Tested it a dozen times since bringing it home, works flawlessly.",
+                    "Thank you for treating something so sentimental with such care."
+                }
             },
             new SeedItem
             {
@@ -73,7 +107,12 @@ namespace MasterAntiqueRepairSeed
                 DescriptionB = "Antique oak rocking chair — armrest on the right side is loose.",
                 DescriptionC = "Antique oak rocking chair — finish is worn through on both armrests.",
                 CompletionComment = "Splined and clamped the cracked rocker rail with a matching oak insert and reinforced it from underneath. Tested with full weight rocking — completely stable now.",
-                FollowUpComment = "It rocks smoothly again with no flex at all. Thank you for taking such care with it."
+                FollowUpComments = new[]
+                {
+                    "It rocks smoothly again with no flex at all. Thank you for taking such care with it.",
+                    "Sat in it all evening, feels sturdier than when I bought it.",
+                    "You really saved this one — I thought it was beyond repair."
+                }
             },
             new SeedItem
             {
@@ -81,7 +120,12 @@ namespace MasterAntiqueRepairSeed
                 DescriptionB = "Walnut armoire — the top cornice molding has separated from the case on one side.",
                 DescriptionC = "Walnut armoire — a small burn mark on the interior shelf needs refinishing.",
                 CompletionComment = "Rehung the door and adjusted the strike so it closes flush; added a discreet center support under the sagging shelf.",
-                FollowUpComment = "Door closes perfectly now and the shelf doesn't sag anymore. Excellent work as always."
+                FollowUpComments = new[]
+                {
+                    "Door closes perfectly now and the shelf doesn't sag anymore. Excellent work as always.",
+                    "Finally able to use the top shelf again without worrying about it collapsing.",
+                    "Looks like nothing ever happened to it. Thank you!"
+                }
             },
             new SeedItem
             {
@@ -89,7 +133,12 @@ namespace MasterAntiqueRepairSeed
                 DescriptionB = "Mahogany sideboard — the top surface has several water rings that need refinishing.",
                 DescriptionC = "Mahogany sideboard — a decorative brass inlay strip is partially detached along the front edge.",
                 CompletionComment = "Replaced the broken hinge with a matching reproduction and shimmed/reset the wobbly leg so all four now sit flush.",
-                FollowUpComment = "The door swings true again and it doesn't rock anymore. Really pleased with the fix."
+                FollowUpComments = new[]
+                {
+                    "The door swings true again and it doesn't rock anymore. Really pleased with the fix.",
+                    "Already back in the dining room, works great.",
+                    "Appreciate you fitting the reproduction hinge so precisely."
+                }
             }
         };
 
@@ -118,6 +167,11 @@ namespace MasterAntiqueRepairSeed
             // rolling 7-day window, while the relative shape stays identical every run.
             var runStart = DateTime.Now;
 
+            // Fixed seed (see RandomSeed) - every draw from this instance is identical on
+            // every run, so "randomized" timing/comment-count variation is still an exact,
+            // reproducible regression baseline, not true nondeterminism.
+            var random = new Random(RandomSeed);
+
             try
             {
                 using (var db = new RepairShopContext(connectionString))
@@ -138,9 +192,9 @@ namespace MasterAntiqueRepairSeed
                     Ticket[] ticketA, ticketB, ticketC;
                     CreateAndProgressTickets(db, customers, employees, out ticketA, out ticketB, out ticketC);
 
-                    var followUpComments = AddFollowUpComments(db, customers, ticketA);
+                    var followUpComments = AddFollowUpComments(db, random, customers, ticketA);
 
-                    PatchTimestamps(db, runStart, employees, customers, ticketA, ticketB, ticketC, followUpComments);
+                    PatchTimestamps(db, random, runStart, employees, customers, ticketA, ticketB, ticketC, followUpComments);
                     db.SaveChanges();
 
                     PrintSummary(db, employees);
@@ -263,24 +317,34 @@ namespace MasterAntiqueRepairSeed
             ticketC = c;
         }
 
-        private static Comment[] AddFollowUpComments(RepairShopContext db, Customer[] customers, Ticket[] ticketA)
+        // Each customer gets 1-3 follow-up comments (not a uniform count) - picked by the
+        // seeded RNG, using that item's first N canned lines (N = the drawn count).
+        private static List<Comment>[] AddFollowUpComments(
+            RepairShopContext db, Random random, Customer[] customers, Ticket[] ticketA)
         {
-            var followUps = new Comment[8];
+            var followUps = new List<Comment>[8];
             var commentService = new CommentService(db);
             for (int i = 1; i <= 8; i++)
             {
-                followUps[i - 1] = commentService.AddCustomerComment(
-                    customers[i - 1].Id, ticketA[i - 1].Id, Items[i - 1].FollowUpComment);
+                var count = random.Next(1, 4); // 1, 2, or 3
+                var comments = new List<Comment>();
+                for (int n = 0; n < count; n++)
+                {
+                    comments.Add(commentService.AddCustomerComment(
+                        customers[i - 1].Id, ticketA[i - 1].Id, Items[i - 1].FollowUpComments[n]));
+                }
+                followUps[i - 1] = comments;
             }
             return followUps;
         }
 
         // Every timestamp above was stamped with the real DateTime.Now by the domain/service
         // methods (no override parameter exists on any of them) - this pass overwrites them
-        // with fixed offsets from the single captured runStart so re-seeding is deterministic.
+        // using the seeded `random` so re-seeding still produces the exact same values every
+        // run, just without an obviously formulaic (linear/cyclic) pattern to them.
         private static void PatchTimestamps(
-            RepairShopContext db, DateTime runStart, Employee[] employees, Customer[] customers,
-            Ticket[] ticketA, Ticket[] ticketB, Ticket[] ticketC, Comment[] followUpComments)
+            RepairShopContext db, Random random, DateTime runStart, Employee[] employees, Customer[] customers,
+            Ticket[] ticketA, Ticket[] ticketB, Ticket[] ticketC, List<Comment>[] followUpComments)
         {
             for (int e = 1; e <= 3; e++)
             {
@@ -300,31 +364,61 @@ namespace MasterAntiqueRepairSeed
                 var c = ticketC[i - 1];
                 var employeeId = employees[(i - 1) % 3].Id;
 
-                a.SubmittedDate = runStart.AddDays(-5).AddHours(i);
-                b.SubmittedDate = runStart.AddDays(-4).AddHours(i);
-                c.SubmittedDate = runStart.AddDays(-3).AddHours(i);
+                // Completion (and its comments) is what MetricsService's rolling 7-day
+                // window actually charts per day - pick a random day within that window
+                // (0 = today .. -6) and a random time of day, rather than a linear/cyclic
+                // formula in i (which is what produced the "sine wave" look).
+                var completedDate = RandomTimeOnDay(random, runStart, -random.Next(0, 7));
+                if (completedDate > runStart)
+                {
+                    completedDate = runStart.AddMinutes(-random.Next(1, 60));
+                }
+                a.CompletedDate = completedDate;
+
+                // Open-to-close duration also varies (1-5 days) instead of a fixed gap -
+                // this is what was reading as suspiciously symmetric before.
+                a.SubmittedDate = completedDate.AddDays(-random.Next(1, 6)).AddMinutes(-random.Next(0, 1440));
+                a.AssignedDate = a.SubmittedDate.Value.AddMinutes(random.Next(15, 480));
+
+                b.SubmittedDate = RandomTimeOnDay(random, runStart, -random.Next(1, 8));
+                b.AssignedDate = b.SubmittedDate.Value.AddMinutes(random.Next(15, 480));
+
+                c.SubmittedDate = RandomTimeOnDay(random, runStart, -random.Next(1, 8));
+
                 SetAuditTimestamp(db, AuditLog.EntityKind.Ticket, a.Id, AuditLog.ActionType.CreateTicket, a.SubmittedDate.Value);
                 SetAuditTimestamp(db, AuditLog.EntityKind.Ticket, b.Id, AuditLog.ActionType.CreateTicket, b.SubmittedDate.Value);
                 SetAuditTimestamp(db, AuditLog.EntityKind.Ticket, c.Id, AuditLog.ActionType.CreateTicket, c.SubmittedDate.Value);
 
-                a.AssignedDate = a.SubmittedDate.Value.AddHours(2);
-                b.AssignedDate = b.SubmittedDate.Value.AddHours(2);
                 SetAuditTimestamp(db, AuditLog.EntityKind.Ticket, a.Id, AuditLog.ActionType.AssignTicket, a.AssignedDate.Value);
                 SetAuditTimestamp(db, AuditLog.EntityKind.Ticket, b.Id, AuditLog.ActionType.AssignTicket, b.AssignedDate.Value);
 
-                a.CompletedDate = runStart.AddDays(-1).AddHours(i);
                 SetAuditTimestamp(db, AuditLog.EntityKind.Ticket, a.Id, AuditLog.ActionType.CompleteTicket, a.CompletedDate.Value);
 
                 // The comment embedded in Employee.CompleteTicket returns no reference of
                 // its own - find it by the one thing that disambiguates it from the
-                // follow-up comment on the same ticket: which user posted it.
+                // follow-up comments on the same ticket: which user posted it.
                 var embeddedComment = db.Comments.Local.Single(cm => cm.TicketId == a.Id && cm.UserId == employeeId);
                 embeddedComment.CreatedAt = a.CompletedDate.Value;
 
-                followUpComments[i - 1].CreatedAt = a.CompletedDate.Value.AddHours(3);
-                SetAuditTimestamp(db, AuditLog.EntityKind.Comment, followUpComments[i - 1].Id,
-                    AuditLog.ActionType.AddComment, followUpComments[i - 1].CreatedAt);
+                // Each follow-up comment lands at its own random delay after completion
+                // (10 minutes to 2 days), clamped so none of them land in the future.
+                foreach (var comment in followUpComments[i - 1])
+                {
+                    var createdAt = a.CompletedDate.Value.AddMinutes(random.Next(10, 2880));
+                    if (createdAt > runStart)
+                    {
+                        createdAt = runStart.AddMinutes(-random.Next(1, 30));
+                    }
+                    comment.CreatedAt = createdAt;
+                    SetAuditTimestamp(db, AuditLog.EntityKind.Comment, comment.Id, AuditLog.ActionType.AddComment, createdAt);
+                }
             }
+        }
+
+        // A random time of day, `dayOffset` days from runStart's date (dayOffset <= 0).
+        private static DateTime RandomTimeOnDay(Random random, DateTime runStart, int dayOffset)
+        {
+            return runStart.Date.AddDays(dayOffset).AddSeconds(random.Next(0, 86400));
         }
 
         // Every (EntityType, EntityId, Action) triple is unique in this seeded dataset -

@@ -42,8 +42,8 @@
                                 <td><asp:Literal runat="server" ID="AverageCreatedPerDayLiteral" /></td>
                             </tr>
                             <tr>
-                                <th>Created/Closed Ratio</th>
-                                <td><asp:Literal runat="server" ID="CreatedClosedRatioLiteral" /></td>
+                                <th>Closed/Created Ratio</th>
+                                <td><asp:Literal runat="server" ID="ClosedCreatedRatioLiteral" /></td>
                             </tr>
                             <tr>
                                 <th>Most Productive Day</th>

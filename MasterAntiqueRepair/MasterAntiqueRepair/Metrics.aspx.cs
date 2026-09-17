@@ -33,7 +33,8 @@ public partial class Metrics : Page
             PeriodTotalLiteral.Text = summary.PeriodTotal.ToString();
             AveragePerDayLiteral.Text = summary.AveragePerDay.ToString("0.0");
             AverageCreatedPerDayLiteral.Text = summary.AverageCreatedPerDay.ToString("0.0");
-            CreatedClosedRatioLiteral.Text = summary.CreatedClosedRatio.ToString("0.00") + " : 1";
+            ClosedCreatedRatioLiteral.Text = summary.PeriodTotal + " / " + summary.CreatedInPeriod + " = " +
+                (summary.ClosedCreatedRatio.HasValue ? summary.ClosedCreatedRatio.Value.ToString("0.00") : "N/A");
             MostProductiveDayLiteral.Text = summary.MostProductiveDay.ToString("MMM d") + " (" + summary.MostProductiveDayCount + " closed)";
             QuietDaysLiteral.Text = summary.QuietDays + " of " + summary.Days.Count;
             BusiestEmployeeLiteral.Text = summary.BusiestEmployeeLabel != null

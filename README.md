@@ -232,7 +232,7 @@ Targets the live app database by default; pass `-Database "<CatalogName>"` for a
 
 ## Regression seed data
 
-`Scripts/Seed-RegressionData.ps1` populates a fresh database with a fixed, deterministic dataset — 1 Manager, 3 Employees, 8 Customers, and 24 Tickets — via the real domain/service methods (so validation and audit logging behave exactly like production), then patches every timestamp to a fixed offset from the moment the script runs. Re-running it against a freshly reset database always produces identical counts, so the resulting `AuditLogs`/`Tickets`/`Comments` rows can be used as a regression baseline.
+`Scripts/Seed-RegressionData.ps1` populates a fresh database with a fixed, deterministic dataset — 1 Manager, 3 Employees, 8 Customers, and 24 Tickets — via the real domain/service methods (so validation and audit logging behave exactly like production), then patches every timestamp using a `System.Random` seeded with a hardcoded constant (not the wall clock). That makes the timing look organic — irregular day spread, varying comment counts per customer — while remaining exactly reproducible: the same seed draws the same sequence every run, so re-running it against a freshly reset database always produces identical counts. The resulting `AuditLogs`/`Tickets`/`Comments` rows can be used as a regression baseline.
 
 Requires an empty database — it checks first and refuses to run otherwise, since seeding on top of existing data would not produce repeatable counts. Run against the working LocalDB database (both scripts default to it; **`Reset-Database.ps1` is destructive and takes everything currently in that database with it** — any accounts/tickets you created by hand are gone after this):
 
@@ -245,9 +245,9 @@ Pass `-Database "<CatalogName>"` to either script if you'd rather target a separ
 
 Schema creation isn't a separate step — EF6's migrations-based initializer runs automatically the moment the tool opens its first `RepairShopContext`.
 
-Each of the 8 customers submits exactly 3 tickets: one ends `COMPLETED` (with a completion comment plus a separate follow-up comment), one ends `INPROGRESS` (assigned, never completed), one stays `SUBMITTED` (never assigned). Ticket assignment: employee1 ← customers {1,4,7}, employee2 ← customers {2,5,8}, employee3 ← customers {3,6} (employee3 ends up with 4 tickets, the other two get 6 each — uneven but exact). See "Regression test accounts" below for the seeded login credentials.
+Each of the 8 customers submits exactly 3 tickets: one ends `COMPLETED` (with a completion comment plus 1-3 follow-up comments — the count and wording vary per customer, drawn from the seeded RNG), one ends `INPROGRESS` (assigned, never completed), one stays `SUBMITTED` (never assigned). Ticket assignment: employee1 ← customers {1,4,7}, employee2 ← customers {2,5,8}, employee3 ← customers {3,6} (employee3 ends up with 4 tickets, the other two get 6 each — uneven but exact). See "Regression test accounts" below for the seeded login credentials.
 
-Expected baseline counts (exact and permanent — verifiable via direct `AuditLogs`/`Tickets`/`Comments` queries any number of days after seeding):
+Expected baseline counts (exact and permanent — verifiable via direct `AuditLogs`/`Tickets`/`Comments` queries any number of days after seeding — the fixed RNG seed means these specific numbers, not just the shape, are reproducible):
 
 | Metric | Count |
 |---|---|
@@ -255,16 +255,18 @@ Expected baseline counts (exact and permanent — verifiable via direct `AuditLo
 | AuditLog: CreateTicket | 24 |
 | AuditLog: AssignTicket | 16 |
 | AuditLog: CompleteTicket | 8 |
-| AuditLog: AddComment | 8 |
-| **AuditLog total** | **67** |
-| Comments table rows | 16 |
+| AuditLog: AddComment | 18 |
+| **AuditLog total** | **77** |
+| Comments table rows | 26 |
 | Tickets: SUBMITTED | 8 |
 | Tickets: INPROGRESS | 8 |
 | Tickets: COMPLETED | 8 |
 
 The Manager itself has no `CreateUser` audit row — there's no `AddManager` service path to log it through, matching production (Managers are never self-service-created either).
 
-**`/Metrics` panel caveat**: `MetricsService.GetSummary()` computes everything live from a rolling 7-day window (`today.AddDays(-6)` through now) — nothing is cached. This seed's timestamps are computed as offsets from the moment the script runs (e.g. "completed 1 day ago"), not fixed calendar dates, specifically so they always fall inside that window no matter what day you seed on. The table above stays checkable directly against the database on any future date; only what shows up on the `/Metrics` page itself is time-relative, and will stop matching once the seed run is more than about a week old (re-seed to refresh it).
+Changing `RandomSeed` in `Program.cs` (or the follow-up comment count range, or any of the day/duration bounds in `PatchTimestamps`) changes the exact numbers above — treat this table as generated from the seed currently in the code, not an independent spec it must match.
+
+**`/Metrics` panel caveat**: `MetricsService.GetSummary()` computes everything live from a rolling 7-day window (`today.AddDays(-6)` through now) — nothing is cached. This seed's completion/comment timestamps are randomly placed within that same window relative to the moment the script runs (a random day 0-6 days back, random time of day), not fixed calendar dates, specifically so they always fall inside it no matter what day you seed on. The table above stays checkable directly against the database on any future date; only what shows up on the `/Metrics` page itself is time-relative, and will stop matching once the seed run is more than about a week old (re-seed to refresh it).
 
 ## Security
 

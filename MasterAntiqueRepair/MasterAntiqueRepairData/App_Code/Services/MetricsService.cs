@@ -110,9 +110,12 @@ namespace MasterAntiqueRepair
                 PeriodTotal = periodTotal,
                 AveragePerDay = (double)periodTotal / days.Count,
                 AverageCreatedPerDay = (double)createdInPeriod / days.Count,
-                // periodTotal is always >= 1 here - the window is clamped to always include
-                // the earliest completion on record, so there's no divide-by-zero to guard.
-                CreatedClosedRatio = (double)createdInPeriod / periodTotal,
+                CreatedInPeriod = createdInPeriod,
+                // createdInPeriod can legitimately be 0 (a ticket closed this period may
+                // have been submitted before the window started), unlike periodTotal -
+                // which the window is clamped to always include at least one of - so this
+                // one genuinely needs the null guard the old ratio didn't.
+                ClosedCreatedRatio = createdInPeriod > 0 ? (double?)((double)periodTotal / createdInPeriod) : null,
                 MostProductiveDay = mostProductiveDay.Day,
                 MostProductiveDayCount = mostProductiveDay.Count,
                 QuietDays = quietDays,
