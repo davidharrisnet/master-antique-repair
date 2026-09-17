@@ -26,8 +26,8 @@ This is explicitly a "legacy build" learning exercise, built to a fixed spec. Th
    - **Controller** — the `.aspx.cs` code-behind. Web Forms has no Controller in the MVC-framework sense, so code-behind plays that role: it reads posted values, calls exactly one Service method, and binds the result to the View. No `DbContext`, no LINQ, no business rules live here.
    - **Model** — everything else, split into two sub-layers that both live in `MasterAntiqueRepairData/App_Code/`:
      - **Services** (`App_Code/Services/`) — one per feature area (`TicketService`, `CommentService`, `AccountService`, `SearchService`, `MetricsService`, `AuditLogService`, plus `AuthService` in the website project — see below). Each owns a `RepairShopContext` for its lifetime, orchestrates a use case, and calls domain-object methods for the actual rules.
-     - **Repositories** (`App_Code/Repositories/`) — `TicketRepository`, `UserRepository`, `CommentRepository`, `AuditLogRepository`, `PasswordResetTokenRepository`. Pure `DbContext`-bound query/persist methods, no business rules. Services depend on Repositories; Repositories never call back up.
-     - The domain classes (`Ticket`, `User`/`Customer`/`Employee`/`Manager`) keep their entity-intrinsic rules exactly as before (`Employee.TakeTicket`, `Ticket.CreateSubmitted`, `User.SetPassword`, comment validation) — Services call these, they don't duplicate them, and these classes never touch a `DbContext` directly.
+     - **Repositories** (`App_Code/Repositories/`) — `TicketRepository`, `UserRepository`, `CommentRepository`, `AuditLogRepository`. Pure `DbContext`-bound query/persist methods, no business rules. Services depend on Repositories; Repositories never call back up. Password/lockout/role persistence isn't a Repository at all anymore — it goes through ASP.NET Identity's `UserManager`/`RoleManager` (see [Authentication](#authentication)), configured centrally by `IdentityConfig`.
+     - The domain classes (`Ticket`, `User`/`Customer`/`Employee`/`Manager`) keep their entity-intrinsic rules exactly as before (`Employee.TakeTicket`, `Ticket.CreateSubmitted`, comment validation) — Services call these, they don't duplicate them, and these classes never touch a `DbContext` directly. Password/lockout are Identity's job now, not the domain class's.
 
      `AuthService` is the one deliberate exception to "Services live in `MasterAntiqueRepairData`": it needs the OWIN cookie sign-in and per-request IP address, neither of which the class library has access to, so it lives in the website's own `App_Code/` alongside `RepairAuthHelper` (which stays as-is — a stateless, cross-cutting auth guard used by every protected page, not business logic specific to login/signup/reset).
 2. **Server-side input validation.** See [Security](#security) — length limits, control-character rejection, password composition rules, all enforced on the domain classes, not just presence-checks.
@@ -36,16 +36,15 @@ This is explicitly a "legacy build" learning exercise, built to a fixed spec. Th
 
 ## Domain model
 
-- **`User`** — base type: `Id`, `Name`, `CreatedAt`, `PasswordHash`, `FailedLoginAttempts`/`LockedOutUntil` (login lockout), `DeletedAt` (soft delete), `Tickets` (tickets *assigned to* this user as an employee). Mapped Table-Per-Hierarchy — one `Users` table with a `Discriminator` column.
+- **`User`** — base type: inherits `Id`/`UserName`/`PasswordHash`/`SecurityStamp`/`AccessFailedCount`/`LockoutEnabled`/`LockoutEndDateUtc` from ASP.NET Identity's `IdentityUser<int,...>`, plus this app's own `CreatedAt`, `DeletedAt` (soft delete), `Tickets` (tickets *assigned to* this user as an employee). Mapped Table-Per-Hierarchy — one `Users` table (Identity's `UserName` column is named `Name` in the actual schema, matching the physical name from before the Identity migration) with a `Discriminator` column.
   - **`Customer : User`** — submits repair requests.
   - **`Employee : User`** — `TakeTicket(Ticket)` assigns a ticket to itself; `CompleteTicket(Ticket, comment)` marks one done, optionally with a comment.
   - **`Manager : User`** — no self-registration; created via `Scripts/Seed-InitialUsers.ps1` or direct DB insert only.
 - **`Ticket`** — `Id`, `Description`, `State`, `Customer` (submitter), `User` (assigned employee, nullable until picked up), `Comments`, `SubmittedDate`, `AssignedDate`, `CompletedDate`.
 - **`Comment`** — `Id`, `Text`, `TicketId`, `UserId`, `CreatedAt`. **Add-only**: once posted, a comment can't be edited or deleted by anyone, including its author — see [Comments](#comments).
 - **`AuditLog`** — append-only action log (`ActionType`, `EntityKind`, `EntityId`, `Timestamp`, acting `User`) — never stores comment text or ticket descriptions themselves. Viewable at `/AuditLogView` (Manager-only).
-- **`PasswordResetToken`** — backs self-service password reset (`Account/ForgotPassword`/`Account/ResetPassword`).
 - **`State.RepairState`** — `SUBMITTED` → `INPROGRESS` → `COMPLETED`.
-- **`PasswordHasher`** — PBKDF2 (`Rfc2898DeriveBytes`, random salt per password, 100,000 iterations, versioned format with a legacy fallback for older hashes).
+- **Roles** (`Customer`/`Employee`/`Manager`) — real ASP.NET Identity roles (`AspNetRoles`-equivalent `Roles`/`UserRoles` tables), seeded idempotently by the Migrations `Configuration.Seed` step, assigned via `UserManager.AddToRole` right after an account is created.
 
 ## Comments
 
@@ -180,13 +179,17 @@ Customer/Employee lookups here are deliberately unfiltered (include soft-deleted
 
 ## Authentication
 
-Custom, built directly on the domain model — not ASP.NET Identity. `AuthService` (website `App_Code/`) owns the actual login/signup/reset business logic:
+Built on real **ASP.NET Identity** (`Microsoft.AspNet.Identity.Core`/`.EntityFramework`/`.Owin`) layered directly on the domain model — `User` *is* the Identity user (`IdentityUser<int,...>`), not a separate `ApplicationUser`. `Web.config` still has `<authentication mode="None" />` and the `FormsAuthentication` module removed — Identity's OWIN cookie middleware is the actual sign-in mechanism, wired up in `App_Code/Startup.Auth.cs`.
 
-- **Login** — throttle check, lookup by name, soft-delete/lockout checks, password verification, audit log, sign-in via `RepairAuthHelper.SignIn`.
-- **Sign up** — throttle check, duplicate-username check (plus a DB-level unique-index backstop for the race), `Customer.SetPassword`, audit log, sign-in.
-- **Password reset** — `Account/ForgotPassword` issues a `PasswordResetToken` (1-hour expiry); since this app has no SMTP configured, the reset link is shown directly on the page rather than emailed. `Account/ResetPassword` validates the token, applies the new password, and marks the token used.
+`AuthService` (website `App_Code/`) owns the login/signup/reset business logic, built on `UserManager`/`SignInManager` (via the synchronous `UserManagerExtensions`/`SignInManagerExtensions` wrapper methods Identity ships — no `async`/`await` needed anywhere in this flow):
 
-`RepairAuthHelper` (also website `App_Code/`) stays separate from `AuthService` — it's the stateless, `DbContext`-free plumbing (`SignIn`/`SignOut`/`GetCurrentUserId`/`RequireRole`) that every protected page's `Page_Load` calls as a guard, not a business flow of its own. It builds a `ClaimsIdentity` from a domain `User` (name, ID, and a role claim — the concrete type name, e.g. `"Employee"`, unwrapped from EF6's lazy-loading proxy via `ObjectContext.GetObjectType`) and signs in via OWIN's cookie middleware (`App_Code/Startup.Auth.cs`). After login, each role lands on its own page unless a `ReturnUrl` was specified.
+- **Login** — throttle check, `UserManager.FindByName`, soft-delete/lockout checks (`UserManager.IsLockedOut`), `UserManager.CheckPassword`, audit log, sign-in via `RepairAuthHelper.SignIn`. A failed attempt calls `UserManager.AccessFailed`, which increments `AccessFailedCount` and locks the account out once it hits the configured threshold (`IdentityConfig`).
+- **Sign up** — throttle check, `UserManager.Create` (its own uniqueness/password-composition validators — see `IdentityConfig` — reject duplicates/weak passwords), `UserManager.AddToRole(id, "Customer")`, audit log, sign-in.
+- **Password reset** — `Account/ForgotPassword` calls `UserManager.GeneratePasswordResetToken` and shows a `?userId=&code=` link directly on the page (no SMTP is configured, so nothing gets emailed). `Account/ResetPassword` validates it with `UserManager.VerifyUserToken`/applies it with `UserManager.ResetPassword`.
+
+`IdentityConfig` (`MasterAntiqueRepairData/App_Code/`) is the single place password-composition rules, lockout thresholds, and the three roles (`Customer`/`Employee`/`Manager`) are configured, so both `AuthService` (self-service, OWIN-backed) and `AccountService` (Manager-driven employee/customer admin, no OWIN needed) enforce identical rules.
+
+`RepairAuthHelper` (also website `App_Code/`) stays separate from `AuthService` — it's the stateless plumbing (`SignIn`/`SignOut`/`GetCurrentUserId`/`RequireRole`) that every protected page's `Page_Load` calls as a guard, not a business flow of its own. `SignIn` calls `ApplicationSignInManager.SignIn`, which builds the `ClaimsIdentity` (name, ID, and a role claim per `AspNetUserRoles`-equivalent row) and signs in via OWIN's cookie middleware. After login, each role lands on its own page unless a `ReturnUrl` was specified.
 
 ### Running migrations
 
@@ -198,6 +201,12 @@ Update-Database -ConfigurationTypeName MasterAntiqueRepairData.Migrations.Repair
 ```
 
 Set **Default project** to `MasterAntiqueRepairData` in Package Manager Console first. Running migrations commands against the website project itself fails outright (`You cannot call a method on a null-valued expression`) — that's the reason `MasterAntiqueRepairData` exists as a separate project.
+
+**The ASP.NET Identity switch's migration (`AddAspNetIdentity`) has been generated and applied** — `User` now inherits `IdentityUser<int,...>`, and `RepairShopContext` gained the `Roles`/`UserRoles`/`UserClaims`/`UserLogins` tables. Existing accounts' passwords don't verify afterward (Identity's password hash format differs from the old hand-rolled one) — reset them or re-seed (see [Seeding initial accounts](#seeding-initial-accounts)).
+
+Two gotchas hit generating/applying that migration, in case the same pattern comes up again:
+- **Custom (`int`) key + EF6 "type was not mapped"** — with a non-default key type, `IdentityDbContext`'s generic parameters (`TRole`/`TUserRole`/`TUserLogin`/`TUserClaim`) can't be the raw `Microsoft.AspNet.Identity.EntityFramework` generic types (`IdentityRole<int, IdentityUserRole<int>>`, etc.) used directly — this EF6 build's `DbSetDiscoveryService`/`DbModelBuilder.MapTypes` fails to map them even when explicitly registered via `modelBuilder.Entity<T>()`. Each one needs a concrete, non-generic subclass instead — `Role`, `UserRole`, `UserLogin`, `UserClaim` (`MasterAntiqueRepairData/App_Code/`), mirroring how `User : IdentityUser<int,...>` already wraps the user side.
+- **`AlterColumn` vs. a raw-SQL filtered index** — `AddUniqueActiveUsername`'s `IX_Users_Name_Active` (a filtered unique index, created via `Sql()` since EF6 has no Fluent API for filtered indexes) isn't visible to Code First, so the scaffolded migration's `AlterColumn("dbo.Users", "Name", ...)` fails with "index is dependent on column." The generated migration needs a hand edit: drop `IX_Users_Name_Active` before the `AlterColumn`, recreate it after, and — since it's not in the migration by default — deliberately skip creating Identity's own unconditional `UserNameIndex`, which would otherwise defeat the soft-delete username-reuse rule `IX_Users_Name_Active` exists to enforce.
 
 ## Accessing the database
 
@@ -212,7 +221,7 @@ sqlcmd -S "(localdb)\MSSQLLocalDB" -d "aspnet-MasterAntiqueRepair-e93a6129-7f74-
 
 ## Seeding initial accounts
 
-Sign-up is Customer-only, and Employee/Manager accounts have no self-service path — so a brand-new, empty database has no way to create its first account through the UI. `Scripts/Seed-InitialUsers.ps1` solves this by inserting a Manager and two Employees directly, hashing each password with the exact same PBKDF2 parameters as `PasswordHasher.cs` so they log in normally afterward.
+Sign-up is Customer-only, and Employee/Manager accounts have no self-service path — so a brand-new, empty database has no way to create its first account through the UI. `Scripts/Seed-InitialUsers.ps1` solves this by inserting a Manager and two Employees directly, hashing each password to match ASP.NET Identity's own `PasswordHasher` wire format (not this app's own code — there isn't a custom hasher class anymore) so they log in normally afterward, and assigning each one its matching role row.
 
 ```
 .\Scripts\Seed-InitialUsers.ps1
@@ -278,9 +287,9 @@ This app went through an explicit security review pass during development. Full 
 - **Authorization / IDOR** — every mutating action re-validates ownership server-side (ticket/comment queries are always scoped to the acting user's id), and every page gates on role via `RepairAuthHelper.RequireRole` before any data access.
 - **CSRF** — `Site.master.cs` carries anti-XSRF protection (a token tied to a cookie and username, re-validated every postback), which protects against a different-origin attack, not against a same-origin XSS payload — the actual defense against that is the output-encoding above plus the ownership checks.
 - **Open redirect** — `IdentityHelper.RedirectToReturnUrl` only honors a `ReturnUrl` confirmed to be a same-site relative path.
-- **Password hashing** — PBKDF2 (`Rfc2898DeriveBytes`), random 16-byte salt per password, 100,000 iterations (embedded in the stored hash so it can be raised again later without invalidating existing passwords), constant-time comparison.
-- **Password policy** (`User.SetPassword`) — 8–128 characters, and must contain at least one letter, one digit, and one non-alphanumeric character. All of these checks report through a single combined message: "Passwords must have 8 to 128 characters and one or more letters, digits, and special characters."
-- **Login lockout** — 5 consecutive failed attempts locks an account for 15 minutes (per-account); `IpThrottle` (in-memory, per-IP, 20 attempts/15 min per scope) covers the gap that leaves for an attacker spreading attempts across many usernames from one source. Applied to login, signup, and forgot-password.
+- **Password hashing** — ASP.NET Identity's own `PasswordHasher` (PBKDF2/`Rfc2898DeriveBytes`, random 16-byte salt per password), invoked via `UserManager.Create`/`ResetPassword`/`AddPassword`, not a hand-rolled hasher.
+- **Password policy** (`IdentityConfig`'s `PasswordPolicyValidator`, set as `UserManager.PasswordValidator`) — 8–128 characters, and must contain at least one letter, one digit, and one non-alphanumeric character. All of these checks report through a single combined message: "Passwords must have 8 to 128 characters and one or more letters, digits, and special characters."
+- **Login lockout** — ASP.NET Identity's own lockout (`AccessFailedCount`/`LockoutEndDateUtc`, configured in `IdentityConfig`): 5 consecutive failed attempts locks an account for 15 minutes (per-account); `IpThrottle` (in-memory, per-IP, 20 attempts/15 min per scope) covers the gap that leaves for an attacker spreading attempts across many usernames from one source. Applied to login, signup, and forgot-password.
 - **Auth cookie** — `CookieHttpOnly = true`, `CookieSecure = CookieSecureOption.SameAsRequest` (upgrades to HTTPS-only automatically once actually served over HTTPS; `Always` would break the documented plain-HTTP local dev workflow).
 - **Audit logging** — never stores comment text or ticket descriptions, only ids/types/timestamps/acting user.
 - **Bad/unknown URLs** — 404s (both IIS-level and ASP.NET-level) redirect to Home via `Web.config`'s `<httpErrors>` and `Global.asax`'s `Application_Error`.

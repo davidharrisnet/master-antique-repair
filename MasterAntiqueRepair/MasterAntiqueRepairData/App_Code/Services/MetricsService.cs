@@ -50,14 +50,14 @@ namespace MasterAntiqueRepair
             // with zero completions so far should still show up with a zero-filled
             // series, not disappear from the charts entirely until their first close.
             var employeeNames = _users.GetActiveEmployees()
-                .Select(emp => emp.Name)
+                .Select(emp => emp.UserName)
                 .OrderBy(n => n)
                 .ToList();
 
             var employeeSeries = employeeNames.Select(name =>
             {
                 var data = days.Select(d => completedTickets.Count(t =>
-                    t.User != null && t.User.Name == name && t.CompletedDate.Value.Date == d)).ToList();
+                    t.User != null && t.User.UserName == name && t.CompletedDate.Value.Date == d)).ToList();
                 return new EmployeeSeriesEntry { Label = name, Data = data, Total = data.Sum() };
             }).ToList();
 
@@ -90,14 +90,14 @@ namespace MasterAntiqueRepair
 
             var customerCommentCounts = commentsInPeriod
                 .Where(c => c.User is Customer)
-                .GroupBy(c => c.User.Name)
+                .GroupBy(c => c.User.UserName)
                 .Select(g => new NamedCount { Label = g.Key, Count = g.Count() })
                 .OrderByDescending(x => x.Count)
                 .ToList();
 
             var employeeCommentCounts = commentsInPeriod
                 .Where(c => c.User is Employee)
-                .GroupBy(c => c.User.Name)
+                .GroupBy(c => c.User.UserName)
                 .Select(g => new NamedCount { Label = g.Key, Count = g.Count() })
                 .OrderByDescending(x => x.Count)
                 .ToList();

@@ -70,7 +70,7 @@ namespace MasterAntiqueRepair
                 {
                     Type = "Comment",
                     Text = c.Text,
-                    AuthorName = c.User.Name,
+                    AuthorName = c.User.UserName,
                     Posted = c.CreatedAt,
                     TicketId = c.TicketId
                 });
@@ -80,7 +80,7 @@ namespace MasterAntiqueRepair
                 {
                     Type = "Ticket Description",
                     Text = t.Description,
-                    AuthorName = t.Customer.Name,
+                    AuthorName = t.Customer.UserName,
                     Posted = t.SubmittedDate ?? DateTime.MinValue,
                     TicketId = t.Id
                 });

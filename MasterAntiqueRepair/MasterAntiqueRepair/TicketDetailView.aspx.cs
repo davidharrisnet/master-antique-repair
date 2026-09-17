@@ -156,7 +156,7 @@ public partial class TicketDetailView : Page
         CustomerIdDropDown.Items.Add(new ListItem("-- Select a customer --", ""));
         foreach (var customer in customers)
         {
-            var label = "#" + customer.Id + " - " + customer.Name + (customer.IsDeleted ? " (deleted)" : "");
+            var label = "#" + customer.Id + " - " + customer.UserName + (customer.IsDeleted ? " (deleted)" : "");
             CustomerIdDropDown.Items.Add(new ListItem(label, customer.Id.ToString()));
         }
     }
@@ -208,7 +208,7 @@ public partial class TicketDetailView : Page
         CustomerPanel.Visible = true;
 
         CustomerIdLiteral.Text = customer.Id.ToString();
-        CustomerNameLiteral.Text = customer.Name;
+        CustomerNameLiteral.Text = customer.UserName;
         CustomerCreatedLiteral.Text = customer.CreatedAt.ToString("g");
         CustomerDeletedLabel.Visible = customer.IsDeleted;
 
@@ -226,7 +226,7 @@ public partial class TicketDetailView : Page
         EmployeeIdDropDown.Items.Add(new ListItem("-- Select an employee --", ""));
         foreach (var employee in employees)
         {
-            var label = "#" + employee.Id + " - " + employee.Name + (employee.IsDeleted ? " (deleted)" : "");
+            var label = "#" + employee.Id + " - " + employee.UserName + (employee.IsDeleted ? " (deleted)" : "");
             EmployeeIdDropDown.Items.Add(new ListItem(label, employee.Id.ToString()));
         }
     }
@@ -278,7 +278,7 @@ public partial class TicketDetailView : Page
         EmployeePanel.Visible = true;
 
         EmployeeIdLiteral.Text = employee.Id.ToString();
-        EmployeeNameLiteral.Text = employee.Name;
+        EmployeeNameLiteral.Text = employee.UserName;
         EmployeeCreatedLiteral.Text = employee.CreatedAt.ToString("g");
         EmployeeDeletedLabel.Visible = employee.IsDeleted;
 
@@ -306,19 +306,19 @@ public partial class TicketDetailView : Page
         StateLiteral.Text = "<span class=\"label " + UiHelpers.StatusLabelClass(ticket.State) + "\">" + ticket.State + "</span>";
 
         CustomerLiteral.Text = ticket.Customer != null
-            ? BuildPersonLink(ticket.Customer.Id, ticket.Customer.Name, "customerId")
+            ? BuildPersonLink(ticket.Customer.Id, ticket.Customer.UserName, "customerId")
             : "(none)";
 
         AssignedToLiteral.Text = ticket.User != null
-            ? BuildPersonLink(ticket.User.Id, ticket.User.Name, "employeeId")
+            ? BuildPersonLink(ticket.User.Id, ticket.User.UserName, "employeeId")
             : "(unassigned)";
 
         EmployeeCommentsAuthorLiteral.Text = ticket.User != null
-            ? "(" + BuildPersonLink(ticket.User.Id, ticket.User.Name, "employeeId") + ")"
+            ? "(" + BuildPersonLink(ticket.User.Id, ticket.User.UserName, "employeeId") + ")"
             : "";
 
         CustomerCommentsAuthorLiteral.Text = ticket.Customer != null
-            ? "(" + BuildPersonLink(ticket.Customer.Id, ticket.Customer.Name, "customerId") + ")"
+            ? "(" + BuildPersonLink(ticket.Customer.Id, ticket.Customer.UserName, "customerId") + ")"
             : "";
 
         SubmittedLiteral.Text = ticket.SubmittedDate.HasValue ? ticket.SubmittedDate.Value.ToString("g") : "";

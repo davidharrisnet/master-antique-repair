@@ -39,17 +39,17 @@ namespace MasterAntiqueRepair
 
         public User GetByName(string name)
         {
-            return _db.Users.FirstOrDefault(u => u.Name == name);
+            return _db.Users.FirstOrDefault(u => u.UserName == name);
         }
 
         public List<Customer> GetActiveCustomers()
         {
-            return _db.Users.OfType<Customer>().Where(c => !c.DeletedAt.HasValue).OrderBy(c => c.Name).ToList();
+            return _db.Users.OfType<Customer>().Where(c => !c.DeletedAt.HasValue).OrderBy(c => c.UserName).ToList();
         }
 
         public List<Employee> GetActiveEmployeesOrderedByName()
         {
-            return _db.Users.OfType<Employee>().Where(e => !e.DeletedAt.HasValue).OrderBy(e => e.Name).ToList();
+            return _db.Users.OfType<Employee>().Where(e => !e.DeletedAt.HasValue).OrderBy(e => e.UserName).ToList();
         }
 
         // Unfiltered (includes soft-deleted) - a Manager searching by id should still be
@@ -66,12 +66,7 @@ namespace MasterAntiqueRepair
 
         public bool ExistsActiveByName(string name, int? excludeId = null)
         {
-            return _db.Users.Any(u => u.Name == name && !u.DeletedAt.HasValue && (!excludeId.HasValue || u.Id != excludeId.Value));
-        }
-
-        public void Add(User user)
-        {
-            _db.Users.Add(user);
+            return _db.Users.Any(u => u.UserName == name && !u.DeletedAt.HasValue && (!excludeId.HasValue || u.Id != excludeId.Value));
         }
     }
 }

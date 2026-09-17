@@ -8,12 +8,16 @@ public partial class Account_ResetPassword : Page
     {
         if (!IsPostBack)
         {
-            var token = Request.QueryString["token"];
-            TokenHidden.Value = token;
+            int userId;
+            int.TryParse(Request.QueryString["userId"], out userId);
+            var code = Request.QueryString["code"];
+
+            UserIdHidden.Value = userId.ToString();
+            CodeHidden.Value = code;
 
             using (var service = new AuthService())
             {
-                if (!service.IsResetTokenValid(token))
+                if (!service.IsResetTokenValid(userId, code))
                 {
                     ShowInvalidToken();
                 }
@@ -28,13 +32,15 @@ public partial class Account_ResetPassword : Page
             return;
         }
 
-        var token = TokenHidden.Value;
+        int userId;
+        int.TryParse(UserIdHidden.Value, out userId);
+        var code = CodeHidden.Value;
 
         using (var service = new AuthService())
         {
             try
             {
-                service.ResetPassword(token, NewPassword.Text);
+                service.ResetPassword(userId, code, NewPassword.Text);
             }
             catch (InvalidOperationException)
             {

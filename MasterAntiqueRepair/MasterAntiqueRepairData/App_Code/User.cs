@@ -1,30 +1,23 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Web;
-
-/// <summary>
-/// Summary description for User
-/// </summary>
-/// 
+using Microsoft.AspNet.Identity.EntityFramework;
 
 namespace MasterAntiqueRepair
 {
-    public class User
+    // Password hashing, lockout, and the UserName/Id identity columns now come from
+    // IdentityUser<int,...> (ASP.NET Identity) instead of app-hand-rolled fields - see
+    // AccountService/AuthService, which drive password/lockout state via UserManager
+    // rather than calling methods on this class directly.
+    public class User : IdentityUser<int, UserLogin, UserRole, UserClaim>
     {
-
-        private const int MinPasswordLength = 8;
-        private const int MaxPasswordLength = 128;
+        // Kept here (not just inlined in IdentityConfig) because they're meaningful
+        // domain constants independent of which auth framework enforces them.
         public const int MaxFailedLoginAttempts = 5;
         public static readonly TimeSpan LockoutDuration = TimeSpan.FromMinutes(15);
 
-        public int Id { get; set; }
-        public string Name { get; set; }
-        public System.DateTime CreatedAt { get; set; }
+        public DateTime CreatedAt { get; set; }
         public virtual ICollection<Ticket> Tickets { get; set; } = new List<Ticket>();
-        public string PasswordHash { get; set; }
-        public int FailedLoginAttempts { get; set; }
-        public DateTime? LockedOutUntil { get; set; }
         public DateTime? DeletedAt { get; set; }
 
         public bool IsDeleted
@@ -35,50 +28,6 @@ namespace MasterAntiqueRepair
         public void Delete()
         {
             DeletedAt = DateTime.Now;
-        }
-
-        private const string PasswordRulesMessage = "Passwords must have 8 to 128 characters and one or more letters, digits, and special characters.";
-
-        public void SetPassword(string password)
-        {
-            bool isValid = !string.IsNullOrEmpty(password)
-                && password.Length >= MinPasswordLength
-                && password.Length <= MaxPasswordLength
-                && password.Any(char.IsLetter)
-                && password.Any(char.IsDigit)
-                && password.Any(c => !char.IsLetterOrDigit(c));
-
-            if (!isValid)
-            {
-                throw new ArgumentException(PasswordRulesMessage);
-            }
-
-            PasswordHash = PasswordHasher.HashPassword(password);
-        }
-
-        public bool VerifyPassword(string password)
-        {
-            return !string.IsNullOrEmpty(PasswordHash) && PasswordHasher.VerifyPassword(password, PasswordHash);
-        }
-
-        public bool IsLockedOut()
-        {
-            return LockedOutUntil.HasValue && LockedOutUntil.Value > DateTime.Now;
-        }
-
-        public void RecordFailedLogin()
-        {
-            FailedLoginAttempts++;
-            if (FailedLoginAttempts >= MaxFailedLoginAttempts)
-            {
-                LockedOutUntil = DateTime.Now.Add(LockoutDuration);
-            }
-        }
-
-        public void RecordSuccessfulLogin()
-        {
-            FailedLoginAttempts = 0;
-            LockedOutUntil = null;
         }
 
         private const int MaxCommentLength = 2000;
@@ -141,5 +90,4 @@ namespace MasterAntiqueRepair
             }
         }
     }
-        
 }

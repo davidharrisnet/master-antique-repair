@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using MasterAntiqueRepair;
+using Microsoft.AspNet.Identity;
 
 namespace MasterAntiqueRepairSeed
 {
@@ -158,9 +159,20 @@ namespace MasterAntiqueRepairSeed
             // so this connects to the .mdf the given database name actually lives in.
             AppDomain.CurrentDomain.SetData("DataDirectory", options.AppDataPath);
 
-            var connectionString = string.Format(
-                "Data Source={0};Initial Catalog={1};AttachDbFilename=|DataDirectory|\\{1}.mdf;Integrated Security=SSPI",
-                options.Server, options.Database);
+            // AttachDbFilename is a LocalDB-only convenience (silently reuses an already-attached
+            // database, or attaches a fresh file if none exists yet under that name) - against a
+            // real SQL Server/Express instance it instead always tries to CREATE DATABASE ... FOR
+            // ATTACH, which fails with "database already exists" the moment the target catalog is
+            // already present (e.g. a normal server-created production database). Only include it
+            // for an actual LocalDB target; a real server instance connects by catalog name alone,
+            // same as the app's own Web.config connection string.
+            var connectionString = options.Server.StartsWith("(localdb)\\", StringComparison.OrdinalIgnoreCase)
+                ? string.Format(
+                    "Data Source={0};Initial Catalog={1};AttachDbFilename=|DataDirectory|\\{1}.mdf;Integrated Security=SSPI",
+                    options.Server, options.Database)
+                : string.Format(
+                    "Data Source={0};Initial Catalog={1};Integrated Security=SSPI",
+                    options.Server, options.Database);
 
             // Captured once - every timestamp seeded below is an offset from this single
             // moment, so re-seeding on any future day always lands inside MetricsService's
@@ -245,14 +257,26 @@ namespace MasterAntiqueRepairSeed
         }
 
         // No AddManager service path exists - managers have no self-service creation
-        // path in the real app either, so this mirrors production (direct EF insert,
-        // no audit row) rather than routing through a Service that doesn't exist.
+        // path in the real app either, so this mirrors production (direct UserManager
+        // create + role assignment, no audit row) rather than routing through a Service
+        // that doesn't exist.
         private static Manager CreateManager(RepairShopContext db, DateTime runStart)
         {
-            var manager = new Manager { Name = "manager", CreatedAt = runStart.AddDays(-7) };
-            manager.SetPassword(ManagerPassword);
-            db.Users.Add(manager);
-            db.SaveChanges();
+            var manager = new Manager { UserName = "manager", CreatedAt = runStart.AddDays(-7) };
+            using (var userManager = IdentityConfig.CreateUserManager(db))
+            using (var roleManager = IdentityConfig.CreateRoleManager(db))
+            {
+                IdentityConfig.EnsureRolesExist(roleManager);
+
+                var result = userManager.Create(manager, ManagerPassword);
+                if (!result.Succeeded)
+                {
+                    throw new InvalidOperationException("Failed to create manager: " + string.Join(" ", result.Errors));
+                }
+
+                userManager.AddToRole(manager.Id, IdentityConfig.ManagerRole);
+            }
+
             return manager;
         }
 
@@ -459,7 +483,7 @@ namespace MasterAntiqueRepairSeed
             foreach (var employee in employees)
             {
                 var count = db.Tickets.Count(t => t.User.Id == employee.Id);
-                Console.WriteLine("  {0,-12} {1}", employee.Name, count);
+                Console.WriteLine("  {0,-12} {1}", employee.UserName, count);
             }
 
             Console.WriteLine();

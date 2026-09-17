@@ -1,28 +1,21 @@
-using System.Data.Entity.Core.Objects;
 using System.Security.Claims;
 using System.Web;
 using Microsoft.AspNet.Identity;
-using Microsoft.Owin.Security;
+using Microsoft.AspNet.Identity.Owin;
 
 namespace MasterAntiqueRepair
 {
     public static class RepairAuthHelper
     {
+        // ApplicationSignInManager.SignIn builds the ClaimsIdentity itself (NameIdentifier,
+        // UserName, SecurityStamp, and a Role claim per AspNetUserRoles row - see
+        // AccountService.AddEmployee/AddCustomer and AuthService.SignUp, which call
+        // UserManager.AddToRole right after creating the account) and hands it to the
+        // OWIN cookie middleware configured in Startup.Auth.cs.
         public static void SignIn(User user, bool isPersistent)
         {
-            var authenticationManager = HttpContext.Current.GetOwinContext().Authentication;
-
-            // EF6 returns a dynamic proxy subclass for lazy-loading/change-tracking, so
-            // user.GetType() alone would give something like "Manager_A1B2C3D4" instead
-            // of "Manager" - ObjectContext.GetObjectType unwraps back to the real POCO type.
-            var realType = ObjectContext.GetObjectType(user.GetType());
-
-            var identity = new ClaimsIdentity(DefaultAuthenticationTypes.ApplicationCookie);
-            identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()));
-            identity.AddClaim(new Claim(ClaimTypes.Name, user.Name));
-            identity.AddClaim(new Claim(ClaimTypes.Role, realType.Name));
-
-            authenticationManager.SignIn(new AuthenticationProperties { IsPersistent = isPersistent }, identity);
+            var signInManager = HttpContext.Current.GetOwinContext().Get<ApplicationSignInManager>();
+            signInManager.SignIn(user, isPersistent, rememberBrowser: false);
         }
 
         public static void SignOut()

@@ -12,12 +12,12 @@ public partial class Account_ForgotPassword : Page
             return;
         }
 
-        PasswordResetToken token;
+        PasswordResetRequest request;
         using (var service = new AuthService())
         {
             try
             {
-                token = service.RequestPasswordReset(UserName.Text, Request.UserHostAddress);
+                request = service.RequestPasswordReset(UserName.Text, Request.UserHostAddress);
             }
             catch (InvalidOperationException ex)
             {
@@ -30,14 +30,16 @@ public partial class Account_ForgotPassword : Page
 
         ResultPanel.Visible = true;
 
-        if (token == null)
+        if (request == null)
         {
             ResetLinkPanel.Visible = false;
             ResultMessage.Text = "No account found with that username.";
             return;
         }
 
-        var resetUrl = new Uri(Request.Url, ResolveUrl("~/Account/ResetPassword") + "?token=" + HttpUtility.UrlEncode(token.Token)).AbsoluteUri;
+        var resetUrl = new Uri(Request.Url, ResolveUrl("~/Account/ResetPassword")
+            + "?userId=" + request.UserId
+            + "&code=" + HttpUtility.UrlEncode(request.Code)).AbsoluteUri;
         ResetLinkHyperLink.NavigateUrl = resetUrl;
         ResetLinkHyperLink.Text = resetUrl;
         ResetLinkPanel.Visible = true;

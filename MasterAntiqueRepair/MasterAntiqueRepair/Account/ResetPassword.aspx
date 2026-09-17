@@ -18,7 +18,8 @@
             </asp:PlaceHolder>
 
             <asp:PlaceHolder runat="server" ID="FormPanel">
-                <asp:HiddenField runat="server" ID="TokenHidden" />
+                <asp:HiddenField runat="server" ID="UserIdHidden" />
+                <asp:HiddenField runat="server" ID="CodeHidden" />
                 <div class="form-horizontal">
                     <div class="form-group">
                         <asp:Label runat="server" AssociatedControlID="NewPassword" CssClass="col-md-3 control-label">New password</asp:Label>

@@ -26,7 +26,7 @@
         AllowPaging="true" PageSize="10" OnPageIndexChanging="AuditLogGrid_PageIndexChanging" OnRowDataBound="AuditLogGrid_RowDataBound">
         <Columns>
             <asp:BoundField DataField="Timestamp" HeaderText="Timestamp" DataFormatString="{0:g}" />
-            <asp:BoundField DataField="User.Name" HeaderText="User" />
+            <asp:BoundField DataField="User.UserName" HeaderText="User" />
             <asp:BoundField DataField="Action" HeaderText="Action" />
             <asp:BoundField DataField="EntityType" HeaderText="Entity" />
             <asp:BoundField DataField="EntityId" HeaderText="Entity Id" />

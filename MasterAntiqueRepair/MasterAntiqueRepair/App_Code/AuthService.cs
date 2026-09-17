@@ -1,27 +1,31 @@
 using System;
-using System.Data.Entity.Infrastructure;
+using System.Linq;
+using System.Web;
+using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.Owin;
 
 namespace MasterAntiqueRepair
 {
     // Consolidates the login/signup/password-reset business logic that used to be
     // duplicated across Login.aspx.cs/CustomerSignUp.aspx.cs/ForgotPassword.aspx.cs/
     // ResetPassword.aspx.cs. Lives in the website's App_Code (not MasterAntiqueRepairData
-    // like the other Services) because it needs RepairAuthHelper.SignIn (OWIN/HttpContext)
-    // and IpThrottle (per-request IP), neither of which the class library has access to.
-    // RepairAuthHelper's RequireRole/GetCurrentUserId/SignOut stay exactly where they are -
-    // they're stateless, DbContext-free, cross-cutting guards used by every protected
+    // like the other Services) because it needs the per-request ApplicationUserManager/
+    // ApplicationSignInManager (OWIN/HttpContext), neither of which the class library has
+    // access to. RepairAuthHelper's RequireRole/GetCurrentUserId/SignOut stay exactly
+    // where they are - they're stateless, cross-cutting guards used by every protected
     // page, not business logic specific to the auth flows themselves.
     public class AuthService : IDisposable
     {
         private readonly RepairShopContext _db;
-        private readonly UserRepository _users;
-        private readonly PasswordResetTokenRepository _resetTokens;
+        private readonly ApplicationUserManager _userManager;
+        private readonly ApplicationSignInManager _signInManager;
 
         public AuthService()
         {
-            _db = new RepairShopContext();
-            _users = new UserRepository(_db);
-            _resetTokens = new PasswordResetTokenRepository(_db);
+            var owinContext = HttpContext.Current.GetOwinContext();
+            _db = owinContext.Get<RepairShopContext>();
+            _userManager = owinContext.GetUserManager<ApplicationUserManager>();
+            _signInManager = owinContext.Get<ApplicationSignInManager>();
         }
 
         // Throws InvalidOperationException with the exact friendly message the page
@@ -34,7 +38,7 @@ namespace MasterAntiqueRepair
                 throw new InvalidOperationException("Too many login attempts from this location. Please try again later.");
             }
 
-            var user = _users.GetByName(username);
+            var user = _userManager.FindByName(username);
 
             if (user != null && user.IsDeleted)
             {
@@ -42,16 +46,15 @@ namespace MasterAntiqueRepair
                 throw new InvalidOperationException("Invalid username or password.");
             }
 
-            if (user != null && user.IsLockedOut())
+            if (user != null && _userManager.IsLockedOut(user.Id))
             {
                 IpThrottle.RecordAttempt("login", ipAddress);
                 throw new InvalidOperationException("This account is temporarily locked due to repeated failed login attempts. Please try again later.");
             }
 
-            if (user != null && user.VerifyPassword(password))
+            if (user != null && _userManager.CheckPassword(user, password))
             {
-                user.RecordSuccessfulLogin();
-                _db.SaveChanges();
+                _userManager.ResetAccessFailedCount(user.Id);
 
                 AuditLogger.Log(_db, user, AuditLog.ActionType.Login, AuditLog.EntityKind.User, user.Id);
                 _db.SaveChanges();
@@ -63,8 +66,9 @@ namespace MasterAntiqueRepair
             IpThrottle.RecordAttempt("login", ipAddress);
             if (user != null)
             {
-                user.RecordFailedLogin();
-                _db.SaveChanges();
+                // Increments AccessFailedCount and locks the account out once it reaches
+                // IdentityConfig's MaxFailedAccessAttemptsBeforeLockout.
+                _userManager.AccessFailed(user.Id);
             }
 
             throw new InvalidOperationException("Invalid username or password.");
@@ -77,29 +81,18 @@ namespace MasterAntiqueRepair
                 throw new InvalidOperationException("Too many sign-up attempts from this location. Please try again later.");
             }
 
-            if (_users.ExistsActiveByName(username))
+            var customer = new Customer { UserName = username, CreatedAt = DateTime.Now };
+            var result = _userManager.Create(customer, password);
+            if (!result.Succeeded)
             {
                 // Rate-limited (not message-obscured): usernames in this app aren't secret
                 // (visible in Manager views and the Audit Log), so the meaningful defense
                 // is capping how fast an IP can sweep through candidate usernames.
                 IpThrottle.RecordAttempt("signup", ipAddress);
-                throw new ArgumentException("That username is already taken.");
+                throw new ArgumentException(string.Join(" ", result.Errors));
             }
 
-            var customer = new Customer { Name = username, CreatedAt = DateTime.Now };
-            customer.SetPassword(password);
-
-            _users.Add(customer);
-
-            try
-            {
-                _db.SaveChanges();
-            }
-            catch (DbUpdateException ex) when (IsDuplicateUsernameViolation(ex))
-            {
-                IpThrottle.RecordAttempt("signup", ipAddress);
-                throw new ArgumentException("That username is already taken.");
-            }
+            _userManager.AddToRole(customer.Id, IdentityConfig.CustomerRole);
 
             AuditLogger.Log(_db, customer, AuditLog.ActionType.CreateUser, AuditLog.EntityKind.User, customer.Id);
             _db.SaveChanges();
@@ -110,7 +103,7 @@ namespace MasterAntiqueRepair
 
         // Returns null if no account exists with that username (caller shows a generic
         // "no account found" message rather than the token going missing silently).
-        public PasswordResetToken RequestPasswordReset(string username, string ipAddress)
+        public PasswordResetRequest RequestPasswordReset(string username, string ipAddress)
         {
             if (IpThrottle.IsBlocked("forgotpassword", ipAddress))
             {
@@ -118,63 +111,66 @@ namespace MasterAntiqueRepair
             }
             IpThrottle.RecordAttempt("forgotpassword", ipAddress);
 
-            var user = _users.GetByName(username);
+            var user = _userManager.FindByName(username);
             if (user == null)
             {
                 return null;
             }
 
-            var token = PasswordResetToken.Create(user);
-            _resetTokens.Add(token);
-            _db.SaveChanges();
+            var code = _userManager.GeneratePasswordResetToken(user.Id);
 
             AuditLogger.Log(_db, user, AuditLog.ActionType.RequestPasswordReset, AuditLog.EntityKind.User, user.Id);
             _db.SaveChanges();
 
-            return token;
+            return new PasswordResetRequest { UserId = user.Id, Code = code };
         }
 
-        public bool IsResetTokenValid(string token)
+        public bool IsResetTokenValid(int userId, string code)
         {
-            var resetToken = _resetTokens.GetByToken(token);
-            return resetToken != null && resetToken.IsValid();
+            if (string.IsNullOrEmpty(code))
+            {
+                return false;
+            }
+            return _userManager.FindById(userId) != null && _userManager.VerifyUserToken(userId, "ResetPassword", code);
         }
 
         // Throws InvalidOperationException for an invalid/expired token, ArgumentException
         // for a password that fails composition rules.
-        public void ResetPassword(string token, string newPassword)
+        public void ResetPassword(int userId, string code, string newPassword)
         {
-            var resetToken = _resetTokens.GetByToken(token);
-            if (resetToken == null || !resetToken.IsValid())
-            {
-                throw new InvalidOperationException("This password reset link is invalid or has expired.");
-            }
-
-            var user = _users.GetById(resetToken.UserId);
+            var user = _userManager.FindById(userId);
             if (user == null)
             {
                 throw new InvalidOperationException("This password reset link is invalid or has expired.");
             }
 
-            user.SetPassword(newPassword);
+            var result = _userManager.ResetPassword(userId, code, newPassword);
+            if (!result.Succeeded)
+            {
+                if (result.Errors.Any(e => e.IndexOf("token", StringComparison.OrdinalIgnoreCase) >= 0))
+                {
+                    throw new InvalidOperationException("This password reset link is invalid or has expired.");
+                }
+                throw new ArgumentException(string.Join(" ", result.Errors));
+            }
 
-            resetToken.UsedAt = DateTime.Now;
-            user.RecordSuccessfulLogin(); // proving ownership via the shown link also clears any existing account lockout
+            _userManager.ResetAccessFailedCount(userId); // proving ownership via the shown link also clears any existing account lockout
+
+            AuditLogger.Log(_db, user, AuditLog.ActionType.ResetPassword, AuditLog.EntityKind.User, userId);
             _db.SaveChanges();
-
-            AuditLogger.Log(_db, user, AuditLog.ActionType.ResetPassword, AuditLog.EntityKind.User, user.Id);
-            _db.SaveChanges();
-        }
-
-        private static bool IsDuplicateUsernameViolation(DbUpdateException ex)
-        {
-            var sqlEx = ex.GetBaseException() as System.Data.SqlClient.SqlException;
-            return sqlEx != null && (sqlEx.Number == 2601 || sqlEx.Number == 2627);
         }
 
         public void Dispose()
         {
-            _db.Dispose();
+            // _db/_userManager/_signInManager are all owned per-request by the OWIN
+            // pipeline (Startup.Auth.cs's app.CreatePerOwinContext calls) - nothing to
+            // dispose here.
         }
+    }
+
+    public class PasswordResetRequest
+    {
+        public int UserId { get; set; }
+        public string Code { get; set; }
     }
 }

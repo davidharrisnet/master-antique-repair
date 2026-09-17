@@ -111,23 +111,29 @@ if ([string]::IsNullOrWhiteSpace($dbId) -or $dbId.Trim() -eq "NULL") {
     Invoke-SqlCommand -Database "master" -Query $attachQuery | Out-Null
 }
 
-# Mirrors MasterAntiqueRepairData/App_Code/PasswordHasher.cs exactly - same salt size,
-# iteration count, hash size, and salt+hash layout - so these accounts can log in
-# through the normal app (User.VerifyPassword) like any other.
+# Mirrors Microsoft.AspNet.Identity's own PasswordHasher.HashPassword exactly (the
+# Identity 2.x wire format: a 0x00 format marker byte, then a 16-byte salt, then a
+# 32-byte PBKDF2/HMACSHA1 subkey derived with a hardcoded 1000 iterations - not
+# configurable, this is Identity 2.x's own fixed format) so these accounts can log in
+# through the normal app (UserManager.CheckPassword) like any other. The app's old
+# hand-rolled PasswordHasher.cs (100,000 iterations, "iterations.salt.hash" string
+# format) is gone - accounts created before that switch need to be reset/re-seeded,
+# not just re-inserted with the old format.
 function New-PasswordHash {
     param([Parameter(Mandatory = $true)][string]$Password)
 
     $saltSize = 16
-    $hashSize = 32
-    $iterations = 10000
+    $subkeySize = 32
+    $iterations = 1000
 
     $deriveBytes = New-Object System.Security.Cryptography.Rfc2898DeriveBytes($Password, $saltSize, $iterations)
     try {
         $salt = $deriveBytes.Salt
-        $hash = $deriveBytes.GetBytes($hashSize)
-        $combined = New-Object byte[] ($saltSize + $hashSize)
-        [Array]::Copy($salt, 0, $combined, 0, $saltSize)
-        [Array]::Copy($hash, 0, $combined, $saltSize, $hashSize)
+        $subkey = $deriveBytes.GetBytes($subkeySize)
+        $combined = New-Object byte[] (1 + $saltSize + $subkeySize)
+        $combined[0] = 0x00
+        [Array]::Copy($salt, 0, $combined, 1, $saltSize)
+        [Array]::Copy($subkey, 0, $combined, 1 + $saltSize, $subkeySize)
         return [Convert]::ToBase64String($combined)
     }
     finally {
@@ -159,10 +165,23 @@ foreach ($account in $accounts) {
     }
 
     $hash = New-PasswordHash -Password $account.Password
+    $securityStamp = [Guid]::NewGuid().ToString()
+
+    # AccessFailedCount/LockoutEnabled/EmailConfirmed/PhoneNumberConfirmed/TwoFactorEnabled
+    # are ASP.NET Identity's own columns (added by the AddAspNetIdentity migration) -
+    # explicit here rather than relying on column defaults, since a bare INSERT that
+    # omits a NOT NULL column with no default fails outright.
     $insertQuery = @"
 SET NOCOUNT ON;
-INSERT INTO dbo.Users (Name, CreatedAt, PasswordHash, Discriminator)
-VALUES ($(Get-SqlLiteral $account.Name), GETDATE(), $(Get-SqlLiteral $hash), $(Get-SqlLiteral $account.Discriminator));
+INSERT INTO dbo.Users (Name, CreatedAt, PasswordHash, SecurityStamp, Discriminator, AccessFailedCount, LockoutEnabled, EmailConfirmed, PhoneNumberConfirmed, TwoFactorEnabled)
+VALUES ($(Get-SqlLiteral $account.Name), GETDATE(), $(Get-SqlLiteral $hash), $(Get-SqlLiteral $securityStamp), $(Get-SqlLiteral $account.Discriminator), 0, 1, 0, 0, 0);
+
+DECLARE @NewUserId INT = SCOPE_IDENTITY();
+DECLARE @RoleId INT = (SELECT Id FROM dbo.Roles WHERE Name = $(Get-SqlLiteral $account.Discriminator));
+IF @RoleId IS NOT NULL
+BEGIN
+    INSERT INTO dbo.UserRoles (UserId, RoleId) VALUES (@NewUserId, @RoleId);
+END
 "@
 
     Invoke-SqlCommand -Database $Database -Query $insertQuery | Out-Null

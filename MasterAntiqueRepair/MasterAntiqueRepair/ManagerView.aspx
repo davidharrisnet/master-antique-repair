@@ -220,7 +220,7 @@
         <Columns>
             <asp:BoundField DataField="Id" HeaderText="Id" />
             <asp:BoundField DataField="Description" HeaderText="Description" />
-            <asp:BoundField DataField="Customer.Name" HeaderText="Customer" />
+            <asp:BoundField DataField="Customer.UserName" HeaderText="Customer" />
         </Columns>
         <EmptyDataTemplate>No unassigned tickets right now.</EmptyDataTemplate>
     </asp:GridView>

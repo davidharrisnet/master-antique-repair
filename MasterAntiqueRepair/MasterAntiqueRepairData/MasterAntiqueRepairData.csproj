@@ -40,6 +40,12 @@
     <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.6.5.1\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.AspNet.Identity.Core, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.Identity.Core.2.2.2\lib\net45\Microsoft.AspNet.Identity.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.AspNet.Identity.EntityFramework, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Microsoft.AspNet.Identity.EntityFramework.2.2.2\lib\net45\Microsoft.AspNet.Identity.EntityFramework.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Core" />
@@ -58,15 +64,17 @@
     <Compile Include="App_Code\Employee.cs" />
     <Compile Include="App_Code\Manager.cs" />
     <Compile Include="App_Code\Tickets.cs" />
-    <Compile Include="App_Code\PasswordHasher.cs" />
-    <Compile Include="App_Code\PasswordResetToken.cs" />
+    <Compile Include="App_Code\IdentityConfig.cs" />
     <Compile Include="App_Code\RepairShopContext.cs" />
+    <Compile Include="App_Code\Role.cs" />
+    <Compile Include="App_Code\UserRole.cs" />
+    <Compile Include="App_Code\UserLogin.cs" />
+    <Compile Include="App_Code\UserClaim.cs" />
     <Compile Include="App_Code\State.cs" />
     <Compile Include="App_Code\Repositories\TicketRepository.cs" />
     <Compile Include="App_Code\Repositories\UserRepository.cs" />
     <Compile Include="App_Code\Repositories\CommentRepository.cs" />
     <Compile Include="App_Code\Repositories\AuditLogRepository.cs" />
-    <Compile Include="App_Code\Repositories\PasswordResetTokenRepository.cs" />
     <Compile Include="App_Code\Services\MetricsSummary.cs" />
     <Compile Include="App_Code\Services\MetricsService.cs" />
     <Compile Include="App_Code\Services\TicketService.cs" />
@@ -112,6 +120,10 @@
     <Compile Include="Migrations\RepairShop\202609151244364_AddUniqueActiveUsername.designer.cs">
       <DependentUpon>202609151244364_AddUniqueActiveUsername.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\RepairShop\202609171625295_AddAspNetIdentity.cs" />
+    <Compile Include="Migrations\RepairShop\202609171625295_AddAspNetIdentity.designer.cs">
+      <DependentUpon>202609171625295_AddAspNetIdentity.cs</DependentUpon>
+    </Compile>
     <Compile Include="Migrations\RepairShop\Configuration.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="App_Code\Ticket.cs" />
@@ -148,6 +160,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\RepairShop\202609151244364_AddUniqueActiveUsername.resx">
       <DependentUpon>202609151244364_AddUniqueActiveUsername.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\RepairShop\202609171625295_AddAspNetIdentity.resx">
+      <DependentUpon>202609171625295_AddAspNetIdentity.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

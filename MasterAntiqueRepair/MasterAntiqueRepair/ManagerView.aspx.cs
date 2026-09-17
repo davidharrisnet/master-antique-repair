@@ -37,7 +37,7 @@ public partial class ManagerView : Page
         EditEmployeeDropDown.Items.Add(new ListItem("-- Select an employee --", ""));
         foreach (var employee in employees)
         {
-            EditEmployeeDropDown.Items.Add(new ListItem(employee.Name, employee.Id.ToString()));
+            EditEmployeeDropDown.Items.Add(new ListItem(employee.UserName, employee.Id.ToString()));
         }
     }
 
@@ -49,7 +49,7 @@ public partial class ManagerView : Page
         ViewEmployeeDropDown.Items.Add(new ListItem("-- Select an employee --", ""));
         foreach (var employee in employees)
         {
-            ViewEmployeeDropDown.Items.Add(new ListItem(employee.Name, employee.Id.ToString()));
+            ViewEmployeeDropDown.Items.Add(new ListItem(employee.UserName, employee.Id.ToString()));
         }
     }
 
@@ -74,7 +74,7 @@ public partial class ManagerView : Page
             }
 
             ViewEmployeePanel.Visible = true;
-            ViewEmployeeNameLiteral.Text = employee.Name;
+            ViewEmployeeNameLiteral.Text = employee.UserName;
 
             var tickets = ticketService.GetAssignedTo(id);
             ViewEmployeeTicketsRepeater.DataSource = tickets;
@@ -107,7 +107,7 @@ public partial class ManagerView : Page
             }
 
             AddEmployeeErrorMessage.Text = string.Empty;
-            AddEmployeeSuccessMessage.Text = "Employee account created for " + employee.Name + ".";
+            AddEmployeeSuccessMessage.Text = "Employee account created for " + employee.UserName + ".";
             NewEmployeeUserName.Text = string.Empty;
             NewEmployeePassword.Text = string.Empty;
             NewEmployeeConfirmPassword.Text = string.Empty;
@@ -133,7 +133,7 @@ public partial class ManagerView : Page
         using (var service = new AccountService())
         {
             var employee = service.GetEmployeeById(id);
-            EditEmployeeUserName.Text = employee != null ? employee.Name : string.Empty;
+            EditEmployeeUserName.Text = employee != null ? employee.UserName : string.Empty;
         }
     }
 
@@ -168,7 +168,7 @@ public partial class ManagerView : Page
             }
 
             EditEmployeeErrorMessage.Text = string.Empty;
-            EditEmployeeSuccessMessage.Text = "Changes saved for " + employee.Name + ".";
+            EditEmployeeSuccessMessage.Text = "Changes saved for " + employee.UserName + ".";
             EditEmployeeNewPassword.Text = string.Empty;
             EditEmployeeConfirmPassword.Text = string.Empty;
 
@@ -202,7 +202,7 @@ public partial class ManagerView : Page
             }
 
             EditEmployeeErrorMessage.Text = string.Empty;
-            EditEmployeeSuccessMessage.Text = employee.Name + " has been removed.";
+            EditEmployeeSuccessMessage.Text = employee.UserName + " has been removed.";
             EditEmployeeUserName.Text = string.Empty;
             EditEmployeeNewPassword.Text = string.Empty;
             EditEmployeeConfirmPassword.Text = string.Empty;
@@ -219,7 +219,7 @@ public partial class ManagerView : Page
         EditCustomerDropDown.Items.Add(new ListItem("-- Select a customer --", ""));
         foreach (var customer in customers)
         {
-            EditCustomerDropDown.Items.Add(new ListItem(customer.Name, customer.Id.ToString()));
+            EditCustomerDropDown.Items.Add(new ListItem(customer.UserName, customer.Id.ToString()));
         }
     }
 
@@ -241,7 +241,7 @@ public partial class ManagerView : Page
             }
 
             AddCustomerErrorMessage.Text = string.Empty;
-            AddCustomerSuccessMessage.Text = "Customer account created for " + customer.Name + ".";
+            AddCustomerSuccessMessage.Text = "Customer account created for " + customer.UserName + ".";
             NewCustomerUserName.Text = string.Empty;
             NewCustomerPassword.Text = string.Empty;
             NewCustomerConfirmPassword.Text = string.Empty;
@@ -267,7 +267,7 @@ public partial class ManagerView : Page
         using (var service = new AccountService())
         {
             var customer = service.GetCustomerById(id);
-            EditCustomerUserName.Text = customer != null ? customer.Name : string.Empty;
+            EditCustomerUserName.Text = customer != null ? customer.UserName : string.Empty;
         }
     }
 
@@ -302,7 +302,7 @@ public partial class ManagerView : Page
             }
 
             EditCustomerErrorMessage.Text = string.Empty;
-            EditCustomerSuccessMessage.Text = "Changes saved for " + customer.Name + ".";
+            EditCustomerSuccessMessage.Text = "Changes saved for " + customer.UserName + ".";
             EditCustomerNewPassword.Text = string.Empty;
             EditCustomerConfirmPassword.Text = string.Empty;
 
@@ -336,7 +336,7 @@ public partial class ManagerView : Page
             }
 
             EditCustomerErrorMessage.Text = string.Empty;
-            EditCustomerSuccessMessage.Text = customer.Name + " has been removed.";
+            EditCustomerSuccessMessage.Text = customer.UserName + " has been removed.";
             EditCustomerUserName.Text = string.Empty;
             EditCustomerNewPassword.Text = string.Empty;
             EditCustomerConfirmPassword.Text = string.Empty;
